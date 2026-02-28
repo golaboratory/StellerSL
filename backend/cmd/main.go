@@ -52,6 +52,14 @@ func main() {
 	config := huma.DefaultConfig("StellerSL API", "1.0.0")
 	humaAPI := humachi.New(router, config)
 
+	// Serve uploaded files
+	uploadDir := "./uploads"
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		_ = os.Mkdir(uploadDir, 0755)
+	}
+	fileServer := http.FileServer(http.Dir(uploadDir))
+	router.Handle("/uploads/*", http.StripPrefix("/uploads/", fileServer))
+
 	api.RegisterRoutes(humaAPI, conn)
 
 	fmt.Println("Server starting on :8888")

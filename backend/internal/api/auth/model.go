@@ -1,5 +1,7 @@
 package auth
 
+import "github.com/danielgtaylor/huma/v2"
+
 type RegisterInput struct {
 	Body struct {
 		TenantID     string `json:"tenant_id" required:"true"`
@@ -32,5 +34,15 @@ type UpdateProfileInput struct {
 	Body struct {
 		Name      string `json:"name" minLength:"1"`
 		AvatarUrl string `json:"avatar_url"`
+	}
+}
+
+type AvatarUploadInput struct {
+	File huma.FormFile `multipart:"file"`
+}
+
+type AvatarUploadOutput struct {
+	Body struct {
+		Url string `json:"url"`
 	}
 }

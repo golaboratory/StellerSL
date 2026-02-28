@@ -9,14 +9,16 @@ import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Toolbar from 'primevue/toolbar';
 import Avatar from 'primevue/avatar';
+import FileUpload from 'primevue/fileupload';
 
 const auth = useAuthStore();
 const toast = useToastStore();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const name = ref(auth.user?.name || '');
-const avatarUrl = ref(''); // We don't have it in the user object yet, need to fetch or add to auth store
+const avatarUrl = ref(auth.user?.avatar_url || '');
 const loading = ref(false);
+const uploadLoading = ref(false);
 
 const handleSave = async () => {
     if (!name.value) return;
@@ -29,14 +31,46 @@ const handleSave = async () => {
         // Update local store
         if (auth.user) {
             auth.user.name = name.value;
-            // If we had avatarUrl in store, update it too
+            auth.user.avatar_url = avatarUrl.value;
         }
         
         toast.showToast('success', 'Success', 'Profile updated successfully');
     } catch (err) {
-        toast.showToast('error', 'Error', 'Failed to update profile');
+        console.error('Failed to update profile', err);
     } finally {
         loading.value = false;
+    }
+};
+
+const onUpload = async (event: any) => {
+    const file = event.files[0];
+    if (!file) return;
+
+    uploadLoading.value = true;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        // Using axiosInstance directly for multipart upload
+        const response = await axiosInstance.post('/auth/avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        const newUrl = response.data.url;
+        avatarUrl.value = newUrl;
+        
+        if (auth.user) {
+            auth.user.avatar_url = newUrl;
+        }
+        
+        toast.showToast('success', 'Success', 'Avatar uploaded successfully');
+    } catch (err) {
+        console.error('Upload failed', err);
+        toast.showToast('error', 'Upload Error', 'Failed to upload image');
+    } finally {
+        uploadLoading.value = false;
     }
 };
 </script>
@@ -58,7 +92,15 @@ const handleSave = async () => {
       <Card class="shadow-sm">
         <template #content>
           <div class="flex flex-col items-center mb-8">
-            <Avatar :image="avatarUrl || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'" class="w-32 h-32 text-4xl mb-4" shape="circle" />
+            <div class="relative group cursor-pointer mb-4">
+                <Avatar :image="avatarUrl" :label="!avatarUrl ? name.charAt(0).toUpperCase() : undefined" class="w-32 h-32 text-4xl" shape="circle" />
+                <div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i class="pi pi-camera text-white text-2xl"></i>
+                </div>
+                <FileUpload mode="basic" name="file" accept="image/*" :maxFileSize="1000000" @select="onUpload" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer" :auto="true" />
+            </div>
+            
+            <span v-if="uploadLoading" class="text-sm text-primary mb-2"><i class="pi pi-spin pi-spinner mr-2"></i>Uploading...</span>
             <span class="text-xl font-bold">{{ name }}</span>
             <span class="text-gray-500 text-sm">{{ auth.user?.email }}</span>
           </div>
@@ -70,8 +112,9 @@ const handleSave = async () => {
             </div>
 
             <div class="flex flex-col gap-2">
-              <label for="avatar" class="font-medium text-gray-700 dark:text-gray-300">Avatar URL</label>
+              <label for="avatar" class="font-medium text-gray-700 dark:text-gray-300">Avatar URL (Optional)</label>
               <InputText id="avatar" v-model="avatarUrl" class="w-full" placeholder="https://example.com/avatar.png" />
+              <small class="text-gray-500">You can also click on the avatar above to upload a file.</small>
             </div>
 
             <div class="pt-4">

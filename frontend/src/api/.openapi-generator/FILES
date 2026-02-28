@@ -6,6 +6,7 @@ common.ts
 configuration.ts
 docs/AccountUser.md
 docs/AccountUserListOutputBody.md
+docs/AvatarUploadOutputBody.md
 docs/BadgeItem.md
 docs/BadgeListOutputBody.md
 docs/BulkTaskCreateInputBody.md
@@ -42,6 +43,7 @@ docs/TeamMemberInputBody.md
 docs/TeamMemberListOutputBody.md
 docs/TeamMemberUser.md
 docs/UpdateProfileInputBody.md
+docs/UpdateTaskRequest.md
 docs/UserStruct.md
 git_push.sh
 index.ts

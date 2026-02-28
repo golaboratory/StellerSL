@@ -192,7 +192,7 @@ func (s *Service) SearchUsers(ctx context.Context, tenantID, query string) (*tas
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
 		users, err = q.SearchUsers(ctx, db.SearchUsersParams{
-			Column1: query,
+			Column1: sql.NullString{String: query, Valid: true},
 			Limit:   20,
 			Offset:  0,
 		})

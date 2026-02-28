@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"io"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -53,5 +54,31 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 			return nil, huma.Error500InternalServerError("Failed to update profile")
 		}
 		return nil, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "upload-avatar",
+		Method:      http.MethodPost,
+		Path:        "/auth/avatar",
+		Summary:     "Upload Avatar Image",
+	}, func(ctx context.Context, input *AvatarUploadInput) (*AvatarUploadOutput, error) {
+		auth, err := getAuth(ctx)
+		if err != nil {
+			return nil, huma.Error401Unauthorized("Unauthorized")
+		}
+
+		data, err := io.ReadAll(input.File.File)
+		if err != nil {
+			return nil, huma.Error500InternalServerError("Failed to read uploaded file")
+		}
+
+		url, err := service.UpdateAvatar(ctx, auth.TenantID, auth.UserID, input.File.Filename, data)
+		if err != nil {
+			return nil, huma.Error500InternalServerError("Failed to upload avatar")
+		}
+
+		resp := &AvatarUploadOutput{}
+		resp.Body.Url = url
+		return resp, nil
 	})
 }

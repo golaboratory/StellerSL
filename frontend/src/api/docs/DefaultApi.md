@@ -27,10 +27,13 @@ All URIs are relative to *http://localhost*
 |[**login**](#login) | **POST** /auth/login | User Login|
 |[**register**](#register) | **POST** /auth/register | User Registration|
 |[**removeTeamMember**](#removeteammember) | **DELETE** /teams/{id}/members/{user_id} | Remove Team Member|
+|[**searchUsers**](#searchusers) | **GET** /users/search | Search Users|
 |[**unassignProjectUser**](#unassignprojectuser) | **DELETE** /projects/{id}/users/{user_id} | Unassign User from Project|
 |[**updateProfile**](#updateprofile) | **PUT** /auth/profile | Update User Profile|
 |[**updateProject**](#updateproject) | **PUT** /projects/{id} | Update Project|
+|[**updateTask**](#updatetask) | **PUT** /tasks/{id} | Update Task|
 |[**updateTaskStatus**](#updatetaskstatus) | **PATCH** /tasks/{id}/status | Update Task Status|
+|[**uploadAvatar**](#uploadavatar) | **POST** /auth/avatar | Upload Avatar Image|
 
 # **addTeamMember**
 > addTeamMember(teamMemberInputBody)
@@ -856,11 +859,21 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-const { status, data } = await apiInstance.listProjects();
+let limit: number; // (optional) (default to 50)
+let offset: number; // (optional) (default to 0)
+
+const { status, data } = await apiInstance.listProjects(
+    limit,
+    offset
+);
 ```
 
 ### Parameters
-This endpoint does not have any parameters.
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **limit** | [**number**] |  | (optional) defaults to 50|
+| **offset** | [**number**] |  | (optional) defaults to 0|
 
 
 ### Return type
@@ -900,11 +913,21 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-const { status, data } = await apiInstance.listTasks();
+let limit: number; // (optional) (default to 50)
+let offset: number; // (optional) (default to 0)
+
+const { status, data } = await apiInstance.listTasks(
+    limit,
+    offset
+);
 ```
 
 ### Parameters
-This endpoint does not have any parameters.
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **limit** | [**number**] |  | (optional) defaults to 50|
+| **offset** | [**number**] |  | (optional) defaults to 0|
 
 
 ### Return type
@@ -995,11 +1018,21 @@ import {
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-const { status, data } = await apiInstance.listTeams();
+let limit: number; // (optional) (default to 50)
+let offset: number; // (optional) (default to 0)
+
+const { status, data } = await apiInstance.listTeams(
+    limit,
+    offset
+);
 ```
 
 ### Parameters
-This endpoint does not have any parameters.
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **limit** | [**number**] |  | (optional) defaults to 50|
+| **offset** | [**number**] |  | (optional) defaults to 0|
 
 
 ### Return type
@@ -1182,6 +1215,57 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **searchUsers**
+> AccountUserListOutputBody searchUsers()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let q: string; // (optional) (default to undefined)
+
+const { status, data } = await apiInstance.searchUsers(
+    q
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **q** | [**string**] |  | (optional) defaults to undefined|
+
+
+### Return type
+
+**AccountUserListOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **unassignProjectUser**
 > unassignProjectUser()
 
@@ -1343,6 +1427,61 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **updateTask**
+> TaskOutputBody updateTask(updateTaskRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    UpdateTaskRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+let updateTaskRequest: UpdateTaskRequest; //
+
+const { status, data } = await apiInstance.updateTask(
+    id,
+    updateTaskRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **updateTaskRequest** | **UpdateTaskRequest**|  | |
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**TaskOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **updateTaskStatus**
 > TaskOutputBody updateTaskStatus(taskStatusUpdateInputBody)
 
@@ -1387,6 +1526,50 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **uploadAvatar**
+> AvatarUploadOutputBody uploadAvatar()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.uploadAvatar();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**AvatarUploadOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json, application/problem+json
 
 

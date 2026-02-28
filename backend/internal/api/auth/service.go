@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -103,4 +105,44 @@ func (s *Service) UpdateProfile(ctx context.Context, tenantID, userID string, in
 		})
 		return err
 	})
+}
+
+func (s *Service) UpdateAvatar(ctx context.Context, tenantID, userID string, filename string, data []byte) (string, error) {
+	// 1. Create uploads directory if not exists
+	uploadDir := "./uploads"
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		_ = os.Mkdir(uploadDir, 0755)
+	}
+
+	// 2. Generate unique filename
+	ext := "png"
+	if strings.Contains(filename, ".") {
+		parts := strings.Split(filename, ".")
+		ext = parts[len(parts)-1]
+	}
+	newFilename := fmt.Sprintf("%s_%d.%s", userID, time.Now().Unix(), ext)
+	filepath := fmt.Sprintf("%s/%s", uploadDir, newFilename)
+
+	// 3. Save file
+	if err := os.WriteFile(filepath, data, 0644); err != nil {
+		return "", err
+	}
+
+	url := fmt.Sprintf("/uploads/%s", newFilename)
+
+	// 4. Update user record
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		user, err := q.GetUserByID(ctx, db.ParseUUID(userID))
+		if err != nil {
+			return err
+		}
+		_, err = q.UpdateUser(ctx, db.UpdateUserParams{
+			ID:        user.ID,
+			Name:      user.Name,
+			AvatarUrl: sql.NullString{String: url, Valid: true},
+		})
+		return err
+	})
+
+	return url, err
 }
