@@ -24,3 +24,15 @@ type TeamMemberInput struct {
 		Role   string `json:"role" enum:"owner,admin,member" default:"member"`
 	}
 }
+
+type TeamMemberUser struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+type TeamMemberListOutput struct {
+	Body struct {
+		Items []TeamMemberUser `json:"items"`
+	}
+}

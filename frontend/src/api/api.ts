@@ -184,6 +184,41 @@ export interface ProjectOutputBody {
     'name': string;
     'updated_at': string;
 }
+export interface ProjectTaskListOutputBody {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'items': Array<TaskItem> | null;
+}
+export interface ProjectUserAssignmentInputBody {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'user_id': string;
+}
+export interface TeamMemberListOutputBody {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'items': Array<TeamMemberUser> | null;
+}
+export interface TeamMemberUser {
+    'email': string;
+    'id': string;
+    'name': string;
+}
+export interface ProjectOutput {
+    'body': ProjectOutputBody;
+}
+export interface ProjectTaskListOutput {
+    'body': ProjectTaskListOutputBody;
+}
+export interface TeamMemberListOutput {
+    'body': TeamMemberListOutputBody;
+}
 export interface RegisterInputBody {
     /**
      * A URL to the JSON Schema for this object.
@@ -1375,6 +1410,38 @@ export class DefaultApi extends BaseAPI {
      */
     public addTeamMember(requestParameters: DefaultApiAddTeamMemberRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).addTeamMember(requestParameters.id, requestParameters.teamMemberInputBody, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    public getProject(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ProjectOutput> {
+        return this.axios.get(`${this.basePath}/projects/${id}`, options);
+    }
+
+    public updateProject(id: string, projectInputBody: ProjectInputBody, options?: RawAxiosRequestConfig): AxiosPromise<ProjectOutput> {
+        return this.axios.put(`${this.basePath}/projects/${id}`, { body: projectInputBody }, options);
+    }
+
+    public deleteProject(id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        return this.axios.delete(`${this.basePath}/projects/${id}`, options);
+    }
+
+    public listProjectTasks(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ProjectTaskListOutput> {
+        return this.axios.get(`${this.basePath}/projects/${id}/tasks`, options);
+    }
+
+    public assignProjectUser(id: string, user_id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        return this.axios.post(`${this.basePath}/projects/${id}/users`, { user_id }, options);
+    }
+
+    public unassignProjectUser(id: string, user_id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        return this.axios.delete(`${this.basePath}/projects/${id}/users/${user_id}`, options);
+    }
+
+    public listTeamMembers(id: string, options?: RawAxiosRequestConfig): AxiosPromise<TeamMemberListOutput> {
+        return this.axios.get(`${this.basePath}/teams/${id}/members`, options);
+    }
+
+    public removeTeamMember(id: string, user_id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        return this.axios.delete(`${this.basePath}/teams/${id}/members/${user_id}`, options);
     }
 
     /**

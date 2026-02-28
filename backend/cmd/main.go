@@ -31,10 +31,8 @@ func main() {
 
 	queries := db.New(conn)
 	router := chi.NewRouter()
-	config := huma.DefaultConfig("StellerSL API", "1.0.0")
-	humaAPI := humachi.New(router, config)
 
-	// Middleware for tenant identification from host
+	// Middleware for tenant identification from host (MUST BE BEFORE humachi.New)
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			host := strings.Split(r.Host, ":")[0]
@@ -43,20 +41,21 @@ func main() {
 			// For local development on localhost, fallback to default tenant if not found
 			tenantID := "00000000-0000-0000-0000-000000000001"
 			if err == nil {
-				tenantID = tenant.ID
+				tenantID = tenant.ID.String()
 			}
 			
-			// Inject into context (using the same key defined in internal/api)
-			// Note: We need a shared key. I'll use a string for simplicity in main.go
-			// but internal/api will expect its specific contextKey.
-			// Let's align them.
 			ctx := context.WithValue(r.Context(), "tenant_id", tenantID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	})
 
+	config := huma.DefaultConfig("StellerSL API", "1.0.0")
+	humaAPI := humachi.New(router, config)
+
 	api.RegisterRoutes(humaAPI, conn)
 
 	fmt.Println("Server starting on :8888")
-	http.ListenAndServe(":8888", router)
+	if err := http.ListenAndServe(":8888", router); err != nil {
+		log.Fatalf("failed to start server: %v", err)
+	}
 }

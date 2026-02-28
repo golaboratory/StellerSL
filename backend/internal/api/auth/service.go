@@ -34,13 +34,22 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) error {
 			return err
 		}
 
-		user, err := q.CreateUser(ctx, input.Body.TenantID, input.Body.Email, string(hash), input.Body.Name)
+		user, err := q.CreateUser(ctx, db.CreateUserParams{
+			TenantID:     db.ParseUUID(input.Body.TenantID),
+			Email:        input.Body.Email,
+			PasswordHash: string(hash),
+			Name:         input.Body.Name,
+		})
 		if err != nil {
 			return err
 		}
 
 		if input.Body.InviteTeamID != "" {
-			_ = q.AddTeamMember(ctx, input.Body.InviteTeamID, user.ID, "member")
+			_ = q.AddTeamMember(ctx, db.AddTeamMemberParams{
+				TeamID: db.ParseUUID(input.Body.InviteTeamID),
+				UserID: user.ID,
+				Role:   "member",
+			})
 		}
 
 		return nil
@@ -48,7 +57,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) error {
 }
 
 func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) (*LoginOutput, error) {
-	var user *db.User
+	var user db.User
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
 		user, err = q.GetUserByEmail(ctx, input.Body.Email)
@@ -68,8 +77,8 @@ func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) 
 
 	claims := &AuthClaims{
 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour))},
-		TenantID:         user.TenantID,
-		UserID:           user.ID,
+		TenantID:         user.TenantID.String(),
+		UserID:           user.ID.String(),
 	}
 
 	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.jwtKey)
@@ -79,7 +88,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) 
 
 	resp := &LoginOutput{}
 	resp.Body.Token = tokenString
-	resp.Body.User.ID = user.ID
+	resp.Body.User.ID = user.ID.String()
 	resp.Body.User.Name = user.Name
 	resp.Body.User.Email = user.Email
 	return resp, nil

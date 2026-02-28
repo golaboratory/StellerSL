@@ -45,4 +45,32 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		}
 		return nil, nil
 	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "list-team-members",
+		Method:      http.MethodGet,
+		Path:        "/teams/{id}/members",
+		Summary:     "List Team Members",
+	}, func(ctx context.Context, input *struct {
+		ID string `path:"id"`
+	}) (*TeamMemberListOutput, error) {
+		auth, _ := getAuth(ctx)
+		return service.ListMembers(ctx, auth.TenantID, input.ID)
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "remove-team-member",
+		Method:      http.MethodDelete,
+		Path:        "/teams/{id}/members/{user_id}",
+		Summary:     "Remove Team Member",
+	}, func(ctx context.Context, input *struct {
+		ID     string `path:"id"`
+		UserID string `path:"user_id"`
+	}) (*struct{}, error) {
+		auth, _ := getAuth(ctx)
+		if err := service.RemoveMember(ctx, auth.TenantID, input.ID, input.UserID); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 }

@@ -3,7 +3,10 @@ package project
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/user/stellersl/backend/internal/api/task"
 	"github.com/user/stellersl/backend/internal/db"
 )
 
@@ -30,7 +33,7 @@ func (s *Service) List(ctx context.Context, tenantID string) (*ProjectListOutput
 	resp := &ProjectListOutput{}
 	for _, p := range projects {
 		resp.Body.Items = append(resp.Body.Items, ProjectItem{
-			ID:          p.ID,
+			ID:          p.ID.String(),
 			Name:        p.Name,
 			Description: p.Description.String,
 		})
@@ -39,10 +42,14 @@ func (s *Service) List(ctx context.Context, tenantID string) (*ProjectListOutput
 }
 
 func (s *Service) Create(ctx context.Context, tenantID string, input ProjectInput) (*ProjectOutput, error) {
-	var p *db.Project
+	var p db.Project
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		p, err = q.CreateProject(ctx, tenantID, input.Body.Name, input.Body.Description)
+		p, err = q.CreateProject(ctx, db.CreateProjectParams{
+			TenantID:    db.ParseUUID(tenantID),
+			Name:        input.Body.Name,
+			Description: sql.NullString{String: input.Body.Description, Valid: input.Body.Description != ""},
+		})
 		return err
 	})
 	if err != nil {
@@ -50,10 +57,103 @@ func (s *Service) Create(ctx context.Context, tenantID string, input ProjectInpu
 	}
 
 	resp := &ProjectOutput{}
-	resp.Body.ID = p.ID
+	resp.Body.ID = p.ID.String()
 	resp.Body.Name = p.Name
 	resp.Body.Description = p.Description.String
-	resp.Body.CreatedAt = p.CreatedAt
-	resp.Body.UpdatedAt = p.UpdatedAt
+	resp.Body.CreatedAt = fmt.Sprintf("%v", p.CreatedAt.Time)
+	resp.Body.UpdatedAt = fmt.Sprintf("%v", p.UpdatedAt.Time)
 	return resp, nil
+}
+
+func (s *Service) Get(ctx context.Context, tenantID, id string) (*ProjectOutput, error) {
+	var p db.Project
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		p, err = q.GetProject(ctx, db.ParseUUID(id))
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &ProjectOutput{}
+	resp.Body.ID = p.ID.String()
+	resp.Body.Name = p.Name
+	resp.Body.Description = p.Description.String
+	resp.Body.CreatedAt = fmt.Sprintf("%v", p.CreatedAt.Time)
+	resp.Body.UpdatedAt = fmt.Sprintf("%v", p.UpdatedAt.Time)
+	return resp, nil
+}
+
+func (s *Service) Update(ctx context.Context, tenantID, id string, input ProjectInput) (*ProjectOutput, error) {
+	var p db.Project
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		p, err = q.UpdateProject(ctx, db.UpdateProjectParams{
+			ID:          db.ParseUUID(id),
+			Name:        input.Body.Name,
+			Description: sql.NullString{String: input.Body.Description, Valid: input.Body.Description != ""},
+		})
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &ProjectOutput{}
+	resp.Body.ID = p.ID.String()
+	resp.Body.Name = p.Name
+	resp.Body.Description = p.Description.String
+	resp.Body.CreatedAt = fmt.Sprintf("%v", p.CreatedAt.Time)
+	resp.Body.UpdatedAt = fmt.Sprintf("%v", p.UpdatedAt.Time)
+	return resp, nil
+}
+
+func (s *Service) Delete(ctx context.Context, tenantID, id string) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		return q.DeleteProject(ctx, db.ParseUUID(id))
+	})
+}
+
+func (s *Service) ListTasks(ctx context.Context, tenantID, id string) (*ProjectTaskListOutput, error) {
+	var tasksList []db.Task
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		tasksList, err = q.ListTasks(ctx, uuid.NullUUID{UUID: db.ParseUUID(id), Valid: true})
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &ProjectTaskListOutput{}
+	for _, t := range tasksList {
+		resp.Body.Items = append(resp.Body.Items, task.TaskItem{
+			ID:        t.ID.String(),
+			ProjectID: t.ProjectID.UUID.String(),
+			Title:     t.Title,
+			Status:    t.Status,
+			Priority:  int(t.Priority.Int32),
+			DueDate:   fmt.Sprintf("%v", t.DueDate.Time),
+		})
+	}
+	return resp, nil
+}
+
+func (s *Service) AssignUser(ctx context.Context, tenantID, projectID, userID string) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		return q.AssignProjectUser(ctx, db.AssignProjectUserParams{
+			ProjectID: db.ParseUUID(projectID),
+			UserID:    db.ParseUUID(userID),
+		})
+	})
+}
+
+func (s *Service) UnassignUser(ctx context.Context, tenantID, projectID, userID string) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		return q.UnassignProjectUser(ctx, db.UnassignProjectUserParams{
+			ProjectID: db.ParseUUID(projectID),
+			UserID:    db.ParseUUID(userID),
+		})
+	})
 }

@@ -1,8 +1,13 @@
 -- name: GetUserByEmail :one
-SELECT * FROM users WHERE tenant_id = $1 AND email = $2;
+SELECT * FROM users WHERE email = $1;
 
 -- name: GetUserByID :one
 SELECT * FROM users WHERE id = $1;
+
+-- name: CreateUser :one
+INSERT INTO users (tenant_id, email, password_hash, name)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
 
 -- name: GetDashboardStats :one
 SELECT 
@@ -10,41 +15,115 @@ SELECT
     COUNT(*) FILTER (WHERE status != 'done') as pending_tasks,
     COUNT(*) FILTER (WHERE status = 'done') as completed_tasks
 FROM tasks 
-WHERE tenant_id = $1 AND (assigned_to = $2 OR assigned_to IS NULL);
+WHERE (assigned_to = $1 OR assigned_to IS NULL);
 
 -- name: GetDailyActivity :many
 SELECT 
-    logged_at,
+    logged_at::text as date,
     COUNT(*) FILTER (WHERE action = 'task_created') as created_count,
     COUNT(*) FILTER (WHERE action = 'task_completed') as completed_count
 FROM activity_logs
-WHERE tenant_id = $1 AND user_id = $2 AND logged_at > CURRENT_DATE - INTERVAL '7 days'
+WHERE user_id = $1 AND logged_at > CURRENT_DATE - INTERVAL '7 days'
 GROUP BY logged_at
 ORDER BY logged_at ASC;
+
+-- name: GetRecentActivity :many
+SELECT l.id, l.action, l.logged_at::text as date, COALESCE(t.title, 'Unknown Task')::text as task_title
+FROM activity_logs l
+LEFT JOIN tasks t ON l.task_id = t.id
+WHERE l.user_id = $1
+ORDER BY l.id DESC
+LIMIT 10;
+
+-- name: GetUserGrowth :one
+SELECT * FROM user_growth WHERE user_id = $1;
+
+-- name: CreateUserGrowth :exec
+INSERT INTO user_growth (user_id) VALUES ($1) ON CONFLICT DO NOTHING;
+
+-- name: AddExp :exec
+UPDATE user_growth SET exp = exp + $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;
+
+-- name: UpdateLevel :exec
+UPDATE user_growth SET level = (exp / 100) + 1 WHERE user_id = $1;
+
+-- name: ListUserBadges :many
+SELECT b.*
+FROM badges b
+JOIN user_badges ub ON b.id = ub.badge_id
+WHERE ub.user_id = $1;
 
 -- name: GetTenantByDomain :one
 SELECT * FROM tenants WHERE domain = $1;
 
 -- name: ListProjects :many
-SELECT * FROM projects WHERE tenant_id = $1 ORDER BY created_at DESC;
+SELECT * FROM projects ORDER BY created_at DESC;
 
 -- name: CreateProject :one
 INSERT INTO projects (tenant_id, name, description)
 VALUES ($1, $2, $3)
 RETURNING *;
 
+-- name: GetProject :one
+SELECT * FROM projects WHERE id = $1;
+
+-- name: UpdateProject :one
+UPDATE projects SET name = $2, description = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *;
+
+-- name: DeleteProject :exec
+DELETE FROM projects WHERE id = $1;
+
+-- name: AssignProjectUser :exec
+INSERT INTO project_users (project_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;
+
+-- name: UnassignProjectUser :exec
+DELETE FROM project_users WHERE project_id = $1 AND user_id = $2;
+
 -- name: ListTasks :many
-SELECT * FROM tasks WHERE tenant_id = $1 AND project_id = COALESCE($2, project_id) ORDER BY created_at DESC;
+SELECT * FROM tasks WHERE project_id = COALESCE($1, project_id) ORDER BY created_at DESC;
+
+-- name: GetTask :one
+SELECT * FROM tasks WHERE id = $1;
+
+-- name: DeleteTask :exec
+DELETE FROM tasks WHERE id = $1;
 
 -- name: CreateTask :one
-INSERT INTO tasks (tenant_id, project_id, title, description, status, due_date)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO tasks (tenant_id, project_id, assigned_to, title, description, status, priority, due_date)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING *;
+
+-- name: UpdateTask :one
+UPDATE tasks 
+SET title = $2, description = $3, status = $4, priority = $5, due_date = $6, updated_at = CURRENT_TIMESTAMP 
+WHERE id = $1 
 RETURNING *;
 
 -- name: UpdateTaskStatus :one
-UPDATE tasks SET status = $3, updated_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND tenant_id = $2
-RETURNING *;
+UPDATE tasks SET status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *;
 
--- name: DeleteTask :exec
-DELETE FROM tasks WHERE id = $1 AND tenant_id = $2;
+-- name: BulkUpdateTasksStatus :exec
+UPDATE tasks SET status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($1::uuid[]);
+
+-- name: BulkDeleteTasks :exec
+DELETE FROM tasks WHERE id = ANY($1::uuid[]);
+
+-- name: CreateTeam :one
+INSERT INTO teams (tenant_id, name) VALUES ($1, $2) RETURNING *;
+
+-- name: ListTeams :many
+SELECT * FROM teams ORDER BY created_at DESC;
+
+-- name: AddTeamMember :exec
+INSERT INTO team_members (team_id, user_id, role)
+VALUES ($1, $2, $3)
+ON CONFLICT (team_id, user_id) DO UPDATE SET role = EXCLUDED.role;
+
+-- name: RemoveTeamMember :exec
+DELETE FROM team_members WHERE team_id = $1 AND user_id = $2;
+
+-- name: ListTeamMembers :many
+SELECT u.*
+FROM users u
+JOIN team_members tm ON u.id = tm.user_id
+WHERE tm.team_id = $1;

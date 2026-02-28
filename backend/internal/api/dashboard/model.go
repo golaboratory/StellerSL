@@ -10,5 +10,11 @@ type DashboardOutput struct {
 			Created   int64  `json:"created"`
 			Completed int64  `json:"completed"`
 		} `json:"daily_activity"`
+		RecentActivity []struct {
+			ID        int64  `json:"id"`
+			Action    string `json:"action"`
+			Date      string `json:"date"`
+			TaskTitle string `json:"task_title"`
+		} `json:"recent_activity"`
 	}
 }

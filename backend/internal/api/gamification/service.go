@@ -17,10 +17,16 @@ func NewService(conn *sql.DB, queries *db.Queries) *Service {
 }
 
 func (s *Service) GetGrowth(ctx context.Context, tenantID, userID string) (*GrowthOutput, error) {
-	var g *db.UserGrowth
+	var g db.UserGrowth
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		g, err = q.GetUserGrowth(ctx, userID)
+		uid := db.ParseUUID(userID)
+		g, err = q.GetUserGrowth(ctx, uid)
+		if err != nil {
+			// Auto create if not exists
+			_ = q.CreateUserGrowth(ctx, uid)
+			g, err = q.GetUserGrowth(ctx, uid)
+		}
 		return err
 	})
 	if err != nil {
@@ -28,8 +34,8 @@ func (s *Service) GetGrowth(ctx context.Context, tenantID, userID string) (*Grow
 	}
 
 	resp := &GrowthOutput{}
-	resp.Body.Level = g.Level
-	resp.Body.Exp = g.Exp
+	resp.Body.Level = int(g.Level)
+	resp.Body.Exp = int(g.Exp)
 	resp.Body.CharacterType = g.CharacterType
 	return resp, nil
 }
@@ -38,7 +44,7 @@ func (s *Service) ListBadges(ctx context.Context, tenantID, userID string) (*Bad
 	var badges []db.Badge
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		badges, err = q.ListUserBadges(ctx, userID)
+		badges, err = q.ListUserBadges(ctx, db.ParseUUID(userID))
 		return err
 	})
 	if err != nil {
@@ -48,9 +54,9 @@ func (s *Service) ListBadges(ctx context.Context, tenantID, userID string) (*Bad
 	resp := &BadgeListOutput{}
 	for _, b := range badges {
 		resp.Body.Items = append(resp.Body.Items, BadgeItem{
-			ID:          b.ID,
+			ID:          b.ID.String(),
 			Name:        b.Name,
-			Description: b.Description,
+			Description: b.Description.String,
 			IconSlug:    b.IconSlug,
 		})
 	}

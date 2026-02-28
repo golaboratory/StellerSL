@@ -2,16 +2,21 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { DefaultApi, TaskItem, ProjectOutputBody } from '../api';
+import { useToastStore } from '../stores/toast';
+import { DefaultApi, TaskItem } from '../api';
 import axiosInstance from '../api/axios';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import Toolbar from 'primevue/toolbar';
 import Tag from 'primevue/tag';
+import ConfirmDialog from 'primevue/confirmdialog';
+import { useConfirm } from "primevue/useconfirm";
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const toast = useToastStore();
+const confirm = useConfirm();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const projectID = route.params.id as string;
@@ -22,18 +27,16 @@ const loading = ref(true);
 const fetchProjectDetails = async () => {
     loading.value = true;
     try {
-        // Since we don't have a specific GetProject API that returns tasks, 
-        // we'll fetch the project list and find ours, then fetch all tasks and filter.
-        // In a real app, the API should handle this filtering.
         const [projRes, tasksRes] = await Promise.all([
-            api.listProjects(),
-            api.listTasks()
+            api.getProject(projectID),
+            api.listProjectTasks(projectID)
         ]);
         
-        project.value = projRes.data.items?.find((p: any) => p.id === projectID);
-        tasks.value = (tasksRes.data.items || []).filter((t: any) => t.project_id === projectID);
+        project.value = projRes.data.body;
+        tasks.value = tasksRes.data.body.items || [];
     } catch (err) {
         console.error('Failed to fetch project details', err);
+        toast.showToast('error', 'Error', 'Failed to load project details');
     } finally {
         loading.value = false;
     }
@@ -49,10 +52,29 @@ const getStatusSeverity = (status: string) => {
         default: return 'info';
     }
 };
+
+const deleteProject = () => {
+    confirm.require({
+        message: 'Are you sure you want to delete this project? All associated tasks will be unlinked.',
+        header: 'Confirm Deletion',
+        icon: 'pi pi-exclamation-triangle',
+        acceptProps: { label: 'Delete', severity: 'danger' },
+        accept: async () => {
+            try {
+                await api.deleteProject(projectID);
+                toast.showToast('success', 'Success', 'Project deleted successfully');
+                router.push('/projects');
+            } catch (err) {
+                toast.showToast('error', 'Error', 'Failed to delete project');
+            }
+        }
+    });
+};
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <ConfirmDialog />
     <Toolbar class="mb-8 p-4 rounded-xl shadow-sm">
       <template #start>
         <div class="flex items-center gap-4 px-4">
@@ -61,9 +83,12 @@ const getStatusSeverity = (status: string) => {
         </div>
       </template>
       <template #end>
-        <router-link to="/dashboard">
-          <Button icon="pi pi-home" label="Dashboard" text />
-        </router-link>
+        <div class="flex gap-2">
+            <Button icon="pi pi-trash" label="Delete Project" severity="danger" text @click="deleteProject" />
+            <router-link to="/dashboard">
+                <Button icon="pi pi-home" label="Dashboard" text />
+            </router-link>
+        </div>
       </template>
     </Toolbar>
 

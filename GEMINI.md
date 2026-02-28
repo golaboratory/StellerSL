@@ -51,9 +51,12 @@ PC、タブレット、スマートフォンなど、あらゆるデバイスか
 
 ## 3. 開発の進め方 (スキーマ駆動)
 
-バックエンドの `huma` が出力する `openapi.json` を基に、フロントエンドの API クライアントを自動生成する。
+### 3-1. DBアクセス層 (sqlc)
+- `backend/internal/db/**` 配下のファイルは `sqlc` によって自動生成されるため、**直接編集してはいけない**。
+- クエリを追加・変更する場合は、`backend/sql/query.sql` を編集し、`sqlc generate` (または `docker-compose exec backend sqlc generate`) を実行すること。
+- RLS (Row Level Security) を考慮し、セッション変数 `app.current_tenant_id` を利用するクエリ設計を行う。
 
-### 3-1. API更新サイクル
+### 3-2. API更新サイクル
 1. バックエンドで `huma` を用いてエンドポイントを実装/更新。
 2. `.\generate-api.ps1` (Windows) または `./generate-api.sh` (Unix) を実行。
 3. `frontend/src/api` に生成された型安全なクラスを利用して UI を実装。
