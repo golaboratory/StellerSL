@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"os"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -30,19 +31,20 @@ func getAuth(ctx context.Context) (struct{ TenantID, UserID string }, error) {
 	return struct{ TenantID, UserID string }{TenantID: tid, UserID: uid}, nil
 }
 
-func RegisterRoutes(api huma.API, queries *db.Queries) {
+func RegisterRoutes(api huma.API, conn *sql.DB) {
+	queries := db.New(conn)
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 	if len(jwtSecret) == 0 {
 		jwtSecret = []byte("my_secret_key")
 	}
 
 	// 1. Initialize Services
-	authSvc := auth.NewService(queries, jwtSecret)
-	dashSvc := dashboard.NewService(queries)
-	projSvc := project.NewService(queries)
-	taskSvc := task.NewService(queries)
-	teamSvc := team.NewService(queries)
-	gamiSvc := gamification.NewService(queries)
+	authSvc := auth.NewService(conn, queries, jwtSecret)
+	dashSvc := dashboard.NewService(conn, queries)
+	projSvc := project.NewService(conn, queries)
+	taskSvc := task.NewService(conn, queries)
+	teamSvc := team.NewService(conn, queries)
+	gamiSvc := gamification.NewService(conn, queries)
 
 	// 2. Register Handlers
 	auth.RegisterHandlers(api, authSvc, getTenantID)

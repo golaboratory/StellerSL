@@ -9,15 +9,21 @@ import (
 )
 
 type Service struct {
+	conn    *sql.DB
 	queries *db.Queries
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(conn *sql.DB, queries *db.Queries) *Service {
+	return &Service{conn: conn, queries: queries}
 }
 
 func (s *Service) List(ctx context.Context, tenantID string) (*TaskListOutput, error) {
-	tasks, err := s.queries.ListTasks(ctx, tenantID, sql.NullString{})
+	var tasks []db.Task
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		tasks, err = q.ListTasks(ctx, sql.NullString{})
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +43,13 @@ func (s *Service) List(ctx context.Context, tenantID string) (*TaskListOutput, e
 }
 
 func (s *Service) Create(ctx context.Context, tenantID string, input TaskInput) (*TaskOutput, error) {
-	var dueDate sql.NullTime
-	t, err := s.queries.CreateTask(ctx, tenantID, input.Body.ProjectID, input.Body.AssignedTo, input.Body.Title, input.Body.Description, input.Body.Status, input.Body.Priority, dueDate)
+	var t *db.Task
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var dueDate sql.NullTime
+		var err error
+		t, err = q.CreateTask(ctx, tenantID, input.Body.ProjectID, input.Body.AssignedTo, input.Body.Title, input.Body.Description, input.Body.Status, input.Body.Priority, dueDate)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +62,21 @@ func (s *Service) Create(ctx context.Context, tenantID string, input TaskInput) 
 }
 
 func (s *Service) UpdateStatus(ctx context.Context, tenantID, userID, taskID, status string) (*TaskOutput, error) {
-	t, err := s.queries.UpdateTaskStatus(ctx, tenantID, taskID, status)
+	var t *db.Task
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		t, err = q.UpdateTaskStatus(ctx, taskID, status)
+		if err != nil {
+			return err
+		}
+
+		if status == "done" {
+			return q.AddExp(ctx, userID, 10)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	if status == "done" {
-		_ = s.queries.AddExp(ctx, userID, 10)
 	}
 
 	resp := &TaskOutput{}
@@ -68,34 +87,42 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID, userID, taskID, st
 }
 
 func (s *Service) BulkCreate(ctx context.Context, tenantID string, input BulkTaskCreateInput) error {
-	var dbTasks []db.Task
-	for _, t := range input.Body.Tasks {
-		dbTasks = append(dbTasks, db.Task{
-			ProjectID:   sql.NullString{String: t.ProjectID, Valid: t.ProjectID != ""},
-			Title:       t.Title,
-			Description: sql.NullString{String: t.Description, Valid: t.Description != ""},
-			Status:      "todo",
-		})
-	}
-	return s.queries.BulkCreateTasks(ctx, tenantID, dbTasks)
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var dbTasks []db.Task
+		for _, t := range input.Body.Tasks {
+			dbTasks = append(dbTasks, db.Task{
+				ProjectID:   sql.NullString{String: t.ProjectID, Valid: t.ProjectID != ""},
+				Title:       t.Title,
+				Description: sql.NullString{String: t.Description, Valid: t.Description != ""},
+				Status:      "todo",
+			})
+		}
+		return q.BulkCreateTasks(ctx, tenantID, dbTasks)
+	})
 }
 
 func (s *Service) BulkUpdateStatus(ctx context.Context, tenantID, userID, status string, ids []string) error {
-	err := s.queries.BulkUpdateTasksStatus(ctx, tenantID, ids, status)
-	if err != nil {
-		return err
-	}
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		err := q.BulkUpdateTasksStatus(ctx, ids, status)
+		if err != nil {
+			return err
+		}
 
-	if status == "done" {
-		_ = s.queries.AddExp(ctx, userID, 10*len(ids))
-	}
-	return nil
+		if status == "done" {
+			return q.AddExp(ctx, userID, 10*len(ids))
+		}
+		return nil
+	})
 }
 
 func (s *Service) BulkDelete(ctx context.Context, tenantID string, ids []string) error {
-	return s.queries.BulkDeleteTasks(ctx, tenantID, ids)
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		return q.BulkDeleteTasks(ctx, ids)
+	})
 }
 
 func (s *Service) Delete(ctx context.Context, tenantID, taskID string) error {
-	return s.queries.DeleteTask(ctx, tenantID, taskID)
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		return q.DeleteTask(ctx, taskID)
+	})
 }

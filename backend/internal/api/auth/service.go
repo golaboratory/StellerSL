@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -11,12 +12,13 @@ import (
 )
 
 type Service struct {
+	conn    *sql.DB
 	queries *db.Queries
 	jwtKey  []byte
 }
 
-func NewService(queries *db.Queries, jwtKey []byte) *Service {
-	return &Service{queries: queries, jwtKey: jwtKey}
+func NewService(conn *sql.DB, queries *db.Queries, jwtKey []byte) *Service {
+	return &Service{conn: conn, queries: queries, jwtKey: jwtKey}
 }
 
 type AuthClaims struct {
@@ -26,25 +28,32 @@ type AuthClaims struct {
 }
 
 func (s *Service) Register(ctx context.Context, input RegisterInput) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(input.Body.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
+	return s.queries.WithTenant(ctx, s.conn, input.Body.TenantID, func(q *db.Queries) error {
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.Body.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
 
-	user, err := s.queries.CreateUser(ctx, input.Body.TenantID, input.Body.Email, string(hash), input.Body.Name)
-	if err != nil {
-		return err
-	}
+		user, err := q.CreateUser(ctx, input.Body.TenantID, input.Body.Email, string(hash), input.Body.Name)
+		if err != nil {
+			return err
+		}
 
-	if input.Body.InviteTeamID != "" {
-		_ = s.queries.AddTeamMember(ctx, input.Body.InviteTeamID, user.ID, "member")
-	}
+		if input.Body.InviteTeamID != "" {
+			_ = q.AddTeamMember(ctx, input.Body.InviteTeamID, user.ID, "member")
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) (*LoginOutput, error) {
-	user, err := s.queries.GetUserByEmail(ctx, tenantID, input.Body.Email)
+	var user *db.User
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		user, err = q.GetUserByEmail(ctx, input.Body.Email)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

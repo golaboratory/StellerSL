@@ -29,12 +29,11 @@ func (q *Queries) CreateTeam(ctx context.Context, tenantID, name string) (*Team,
 	return &t, err
 }
 
-func (q *Queries) ListTeams(ctx context.Context, tenantID string) ([]Team, error) {
+func (q *Queries) ListTeams(ctx context.Context) ([]Team, error) {
 	rows, err := q.db.QueryContext(ctx, `
 		SELECT id, tenant_id, name, created_at, updated_at
 		FROM teams
-		WHERE tenant_id = $1
-		ORDER BY created_at DESC`, tenantID)
+		ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}

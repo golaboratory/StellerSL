@@ -2,20 +2,27 @@ package gamification
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/user/stellersl/backend/internal/db"
 )
 
 type Service struct {
+	conn    *sql.DB
 	queries *db.Queries
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(conn *sql.DB, queries *db.Queries) *Service {
+	return &Service{conn: conn, queries: queries}
 }
 
-func (s *Service) GetGrowth(ctx context.Context, userID string) (*GrowthOutput, error) {
-	g, err := s.queries.GetUserGrowth(ctx, userID)
+func (s *Service) GetGrowth(ctx context.Context, tenantID, userID string) (*GrowthOutput, error) {
+	var g *db.UserGrowth
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		g, err = q.GetUserGrowth(ctx, userID)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -27,8 +34,13 @@ func (s *Service) GetGrowth(ctx context.Context, userID string) (*GrowthOutput, 
 	return resp, nil
 }
 
-func (s *Service) ListBadges(ctx context.Context, userID string) (*BadgeListOutput, error) {
-	badges, err := s.queries.ListUserBadges(ctx, userID)
+func (s *Service) ListBadges(ctx context.Context, tenantID, userID string) (*BadgeListOutput, error) {
+	var badges []db.Badge
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		badges, err = q.ListUserBadges(ctx, userID)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

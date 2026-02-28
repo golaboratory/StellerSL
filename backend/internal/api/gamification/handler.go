@@ -8,7 +8,8 @@ import (
 )
 
 type AuthInfo struct {
-	UserID string
+	TenantID string
+	UserID   string
 }
 
 func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Context) (AuthInfo, error)) {
@@ -19,7 +20,7 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		Summary:     "User Growth",
 	}, func(ctx context.Context, input *struct{}) (*GrowthOutput, error) {
 		auth, _ := getAuth(ctx)
-		return service.GetGrowth(ctx, auth.UserID)
+		return service.GetGrowth(ctx, auth.TenantID, auth.UserID)
 	})
 
 	huma.Register(api, huma.Operation{
@@ -29,6 +30,6 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		Summary:     "User Badges",
 	}, func(ctx context.Context, input *struct{}) (*BadgeListOutput, error) {
 		auth, _ := getAuth(ctx)
-		return service.ListBadges(ctx, auth.UserID)
+		return service.ListBadges(ctx, auth.TenantID, auth.UserID)
 	})
 }

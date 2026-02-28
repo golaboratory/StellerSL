@@ -2,20 +2,27 @@ package team
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/user/stellersl/backend/internal/db"
 )
 
 type Service struct {
+	conn    *sql.DB
 	queries *db.Queries
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(conn *sql.DB, queries *db.Queries) *Service {
+	return &Service{conn: conn, queries: queries}
 }
 
 func (s *Service) List(ctx context.Context, tenantID string) (*TeamListOutput, error) {
-	teams, err := s.queries.ListTeams(ctx, tenantID)
+	var teams []db.Team
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		teams, err = q.ListTeams(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -28,13 +35,20 @@ func (s *Service) List(ctx context.Context, tenantID string) (*TeamListOutput, e
 }
 
 func (s *Service) Create(ctx context.Context, tenantID, name string) (*TeamItem, error) {
-	t, err := s.queries.CreateTeam(ctx, tenantID, name)
+	var t *db.Team
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		t, err = q.CreateTeam(ctx, tenantID, name)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &TeamItem{ID: t.ID, Name: t.Name}, nil
 }
 
-func (s *Service) AddMember(ctx context.Context, teamID, userID, role string) error {
-	return s.queries.AddTeamMember(ctx, teamID, userID, role)
+func (s *Service) AddMember(ctx context.Context, tenantID, teamID, userID, role string) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		return q.AddTeamMember(ctx, teamID, userID, role)
+	})
 }

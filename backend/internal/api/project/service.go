@@ -2,20 +2,27 @@ package project
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/user/stellersl/backend/internal/db"
 )
 
 type Service struct {
+	conn    *sql.DB
 	queries *db.Queries
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(conn *sql.DB, queries *db.Queries) *Service {
+	return &Service{conn: conn, queries: queries}
 }
 
 func (s *Service) List(ctx context.Context, tenantID string) (*ProjectListOutput, error) {
-	projects, err := s.queries.ListProjects(ctx, tenantID)
+	var projects []db.Project
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		projects, err = q.ListProjects(ctx)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +39,12 @@ func (s *Service) List(ctx context.Context, tenantID string) (*ProjectListOutput
 }
 
 func (s *Service) Create(ctx context.Context, tenantID string, input ProjectInput) (*ProjectOutput, error) {
-	p, err := s.queries.CreateProject(ctx, tenantID, input.Body.Name, input.Body.Description)
+	var p *db.Project
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		p, err = q.CreateProject(ctx, tenantID, input.Body.Name, input.Body.Description)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

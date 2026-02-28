@@ -9,6 +9,7 @@ import (
 
 type AuthInfo struct {
 	TenantID string
+	UserID   string
 }
 
 func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Context) (AuthInfo, error)) {
@@ -38,7 +39,8 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		Path:        "/teams/{id}/members",
 		Summary:     "Add Team Member",
 	}, func(ctx context.Context, input *TeamMemberInput) (*struct{}, error) {
-		if err := service.AddMember(ctx, input.ID, input.Body.UserID, input.Body.Role); err != nil {
+		auth, _ := getAuth(ctx)
+		if err := service.AddMember(ctx, auth.TenantID, input.ID, input.Body.UserID, input.Body.Role); err != nil {
 			return nil, huma.Error500InternalServerError("Failed to add member")
 		}
 		return nil, nil

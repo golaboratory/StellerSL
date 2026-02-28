@@ -12,15 +12,16 @@
 - [x] ユーザー登録 (サインアップ / Bcrypt)
 - [x] ログアウト (クライアント側トークン破棄)
 - [x] テナント識別ミドルウェアの完全実装 (Hostヘッダーベース)
+- [x] PostgreSQL Row Level Security (RLS) による厳密なテナント分離の実装
 - [x] JWT 有効期限切れの自動ハンドリング (401 Axios Interceptor)
 
-## 3. プロジェクト管理 (Project Management) - [COMPLETE]
+## 3. プロジェクト管理 (Project Management)
 - [x] プロジェクト一覧表示
 - [x] プロジェクト登録 (API & UI)
-- [x] プロジェクト更新 (API)
-- [x] プロジェクト削除 (API)
-- [x] プロジェクト詳細画面の実装 (Task絞り込み連携)
-- [x] プロジェクトへのユーザーアサイン管理 UI (Project Detail 画面に統合)
+- [ ] プロジェクト更新 (API)
+- [ ] プロジェクト削除 (API)
+- [ ] プロジェクト詳細画面の実装 (Task絞り込み連携 - API 側未実装)
+- [ ] プロジェクトへのユーザーアサイン管理 UI (Project Detail 画面に統合)
 
 ## 4. タスク管理 (Task Management)
 - [x] タスク一覧表示 (GTD要素を含む簡易ステータス変更)
@@ -63,8 +64,21 @@
 - [x] フロントエンド: 画面遷移テスト (Vue Router / Navigation Guards)
 - [x] 継続的インテグレーション (GitHub Actions)
 
-## 10. 今後の課題 (Next Steps)
+## 10. 今後の課題 (Next Steps) - [COMPLETE]
 - [x] 本番環境用 Dockerfile の最適化 (マルチステージビルド)
 - [x] データベースマイグレーションのディレクトリ構造化
 - [x] フロントエンドのエラーハンドリング共通化 (Global Toast Interceptor)
 - [x] ダークモード/ライトモードの切り替え UI
+
+## 11. 機能拡張・品質向上 (Phase 2 Enhancement)
+- [ ] バックエンド: プロジェクト詳細、更新、削除の API ハンドラー実装 (huma)
+- [ ] バックエンド: プロジェクト別タスク取得 API (`GET /projects/{id}/tasks`)
+- [ ] バックエンド: プロジェクト・ユーザーアサイン API の実装 (`POST /projects/{id}/users`, `DELETE /projects/{id}/users/{user_id}`)
+- [ ] バックエンド: チームメンバー一覧取得 API (`GET /teams/{id}/members`)
+- [ ] フロントエンド: `ProjectDetail.vue` のリファクタリング (全件取得フィルタリングから個別取得へ)
+- [ ] フロントエンド: プロジェクトメンバー管理 UI の完全実装
+- [ ] フロントエンド: チームメンバー管理 UI の補完 (一覧表示、メンバー削除)
+- [ ] フロントエンド: ユーザープロフィール編集機能 (名前、アバター URL)
+- [ ] フロントエンド: タスクのグローバル検索・フィルタリング機能
+- [ ] バックエンド: タスク完了時のバッジ自動付与ロジックの強化
+- [ ] バックエンド: アクティビティログの取得・表示 API (Dashboard詳細)

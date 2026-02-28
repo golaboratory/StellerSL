@@ -2,25 +2,35 @@ package dashboard
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/user/stellersl/backend/internal/db"
 )
 
 type Service struct {
+	conn    *sql.DB
 	queries *db.Queries
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(conn *sql.DB, queries *db.Queries) *Service {
+	return &Service{conn: conn, queries: queries}
 }
 
 func (s *Service) GetStats(ctx context.Context, tenantID, userID string) (*DashboardOutput, error) {
-	stats, err := s.queries.GetDashboardStats(ctx, tenantID, userID)
-	if err != nil {
-		return nil, err
-	}
+	var stats *db.DashboardStats
+	var activities []db.DailyActivity
 
-	activities, err := s.queries.GetDailyActivity(ctx, tenantID, userID)
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		stats, err = q.GetDashboardStats(ctx, userID)
+		if err != nil {
+			return err
+		}
+
+		activities, err = q.GetDailyActivity(ctx, userID)
+		return err
+	})
+
 	if err != nil {
 		return nil, err
 	}

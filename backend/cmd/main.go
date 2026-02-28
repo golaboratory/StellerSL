@@ -55,7 +55,7 @@ func main() {
 		})
 	})
 
-	api.RegisterRoutes(humaAPI, queries)
+	api.RegisterRoutes(humaAPI, conn)
 
 	fmt.Println("Server starting on :8888")
 	http.ListenAndServe(":8888", router)

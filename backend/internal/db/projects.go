@@ -26,12 +26,11 @@ func (q *Queries) CreateProject(ctx context.Context, tenantID, name, description
 	return &p, err
 }
 
-func (q *Queries) ListProjects(ctx context.Context, tenantID string) ([]Project, error) {
+func (q *Queries) ListProjects(ctx context.Context) ([]Project, error) {
 	rows, err := q.db.QueryContext(ctx, `
 		SELECT id, tenant_id, name, description, created_at, updated_at 
 		FROM projects 
-		WHERE tenant_id = $1 
-		ORDER BY created_at DESC`, tenantID)
+		ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -48,31 +47,31 @@ func (q *Queries) ListProjects(ctx context.Context, tenantID string) ([]Project,
 	return projects, nil
 }
 
-func (q *Queries) GetProject(ctx context.Context, tenantID, id string) (*Project, error) {
+func (q *Queries) GetProject(ctx context.Context, id string) (*Project, error) {
 	row := q.db.QueryRowContext(ctx, `
 		SELECT id, tenant_id, name, description, created_at, updated_at 
 		FROM projects 
-		WHERE tenant_id = $1 AND id = $2`, tenantID, id)
+		WHERE id = $1`, id)
 	
 	var p Project
 	err := row.Scan(&p.ID, &p.TenantID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt)
 	return &p, err
 }
 
-func (q *Queries) UpdateProject(ctx context.Context, tenantID, id, name, description string) (*Project, error) {
+func (q *Queries) UpdateProject(ctx context.Context, id, name, description string) (*Project, error) {
 	row := q.db.QueryRowContext(ctx, `
 		UPDATE projects 
-		SET name = $3, description = $4, updated_at = CURRENT_TIMESTAMP
-		WHERE tenant_id = $1 AND id = $2 
+		SET name = $2, description = $3, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1 
 		RETURNING id, tenant_id, name, description, created_at, updated_at`,
-		tenantID, id, name, sql.NullString{String: description, Valid: description != ""})
+		id, name, sql.NullString{String: description, Valid: description != ""})
 
 	var p Project
 	err := row.Scan(&p.ID, &p.TenantID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt)
 	return &p, err
 }
 
-func (q *Queries) DeleteProject(ctx context.Context, tenantID, id string) error {
-	_, err := q.db.ExecContext(ctx, "DELETE FROM projects WHERE tenant_id = $1 AND id = $2", tenantID, id)
+func (q *Queries) DeleteProject(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, "DELETE FROM projects WHERE id = $1", id)
 	return err
 }
