@@ -1,0 +1,70 @@
+# StellerSL Development TODO
+
+## 1. 基盤構築・PoC (Phase 1) - [COMPLETE]
+- [x] Docker Compose によるローカル開発環境の構築
+- [x] DBスキーマ設計および初期投入スクリプト (_initdb)
+- [x] Go + Huma による API 基盤のセットアップ
+- [x] Vue 3 + TypeScript + Tailwind CSS v4 + PrimeVue 4 の導入
+- [x] OpenAPI Generator による型付き API クライアント生成自動化 (.ps1 / .sh)
+
+## 2. 認証・認可 (Authentication) - [COMPLETE]
+- [x] ユーザーログイン (JWT発行)
+- [x] ユーザー登録 (サインアップ / Bcrypt)
+- [x] ログアウト (クライアント側トークン破棄)
+- [x] テナント識別ミドルウェアの完全実装 (Hostヘッダーベース)
+- [x] JWT 有効期限切れの自動ハンドリング (401 Axios Interceptor)
+
+## 3. プロジェクト管理 (Project Management) - [COMPLETE]
+- [x] プロジェクト一覧表示
+- [x] プロジェクト登録 (API & UI)
+- [x] プロジェクト更新 (API)
+- [x] プロジェクト削除 (API)
+- [x] プロジェクト詳細画面の実装 (Task絞り込み連携)
+- [x] プロジェクトへのユーザーアサイン管理 UI (Project Detail 画面に統合)
+
+## 4. タスク管理 (Task Management)
+- [x] タスク一覧表示 (GTD要素を含む簡易ステータス変更)
+- [x] タスク登録 (単一)
+- [x] タスクステータス更新 (PATCH /tasks/{id}/status)
+- [x] タスク削除 (単一)
+- [x] タスク一括登録 (行区切りテキスト入力)
+- [x] タスク一括ステータス更新
+- [x] タスク一括削除
+- [x] タスク編集モーダルの実装 (タイトル・説明・期限の詳細編集)
+- [x] 優先度(Priority)のUI反映 (アイコン表示)
+
+## 5. ダッシュボード・統計 (Dashboard & Analytics) - [COMPLETE]
+- [x] タスク統計 (Total/Pending/Completed)
+- [x] 日別アクティビティグラフ (7日間)
+- [x] ゲーミフィケーション情報の統合表示
+
+## 6. チーム機能 (Team Features) - [COMPLETE]
+- [x] チーム作成・管理
+- [x] チームメンバー管理 (API)
+- [x] チーム詳細 UI (メンバー一覧表示、追加フォーム)
+- [x] チーム招待リンク生成機能 (Signupクエリパラメータ連携)
+
+## 7. ゲーミフィケーション (Gamification) - [COMPLETE]
+- [x] レベル・経験値システム (10 EXP/task)
+- [x] バッジ獲得・一覧表示 (API & UI)
+- [x] キャラクター成長に応じたアバター変化 (レベルに応じたアイコン・色)
+- [x] 特殊バッジ獲得通知 (Dashboard Toast連携)
+
+## 8. 高度な表示 (Advanced Views)
+- [x] ガントチャート基本表示 (frappe-gantt)
+- [x] カレンダー基本表示 (v-calendar)
+- [x] ガントチャートでの日付変更イベント検知
+- [x] カレンダーでの日別タスク表示連携
+
+## 9. テスト・品質 (Quality Assurance)
+- [x] バックエンド: DBアクセス層・API層の構築
+- [x] フロントエンド: Pinia ストアの単体テスト
+- [x] バックエンド: ユニットテスト (api ヘルパー関数のテスト)
+- [x] フロントエンド: 画面遷移テスト (Vue Router / Navigation Guards)
+- [x] 継続的インテグレーション (GitHub Actions)
+
+## 10. 今後の課題 (Next Steps)
+- [x] 本番環境用 Dockerfile の最適化 (マルチステージビルド)
+- [x] データベースマイグレーションのディレクトリ構造化
+- [x] フロントエンドのエラーハンドリング共通化 (Global Toast Interceptor)
+- [x] ダークモード/ライトモードの切り替え UI
