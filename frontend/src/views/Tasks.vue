@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { DefaultApi, Configuration, TaskItem } from '../api';
 import axiosInstance from '../api/axios';
 import Card from 'primevue/card';
+import Toolbar from 'primevue/toolbar';
+import Button from 'primevue/button';
+import Tag from 'primevue/tag';
+import Checkbox from 'primevue/checkbox';
+import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
+import Textarea from 'primevue/textarea';
+import SelectButton from 'primevue/selectbutton';
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
 
 const auth = useAuthStore();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
@@ -11,6 +21,7 @@ const api = new DefaultApi(undefined, '/api', axiosInstance);
 const tasks = ref<TaskItem[]>([]);
 const loading = ref(true);
 const selectedTasks = ref<string[]>([]);
+const searchQuery = ref('');
 
 // Bulk Create Dialog
 const showBulkDialog = ref(false);
@@ -22,6 +33,15 @@ const showEditDialog = ref(false);
 const editTask = ref<any>(null);
 const editLoading = ref(false);
 
+const filteredTasks = computed(() => {
+    if (!searchQuery.value) return tasks.value;
+    const query = searchQuery.value.toLowerCase();
+    return tasks.value.filter(t => 
+        t.title.toLowerCase().includes(query) || 
+        (t as any).description?.toLowerCase().includes(query)
+    );
+});
+
 const openEditDialog = (task: any) => {
     editTask.value = { ...task };
     showEditDialog.value = true;
@@ -31,10 +51,10 @@ const handleUpdateTask = async () => {
     if (!editTask.value) return;
     editLoading.value = true;
     try {
-        // Since the current API doesn't have a full UpdateTask, 
-        // we'll assume the status update API or implement a full one if needed.
-        // For now, let's just update the status as an example.
-        await api.updateTaskStatus(editTask.value.id, { status: editTask.value.status });
+        await api.updateTaskStatus({ 
+            id: editTask.value.id, 
+            taskStatusUpdateInputBody: { status: editTask.value.status } 
+        });
         showEditDialog.value = false;
         await fetchTasks();
     } catch (e) {
@@ -70,7 +90,10 @@ const getStatusSeverity = (status: string) => {
 
 const updateStatus = async (task: any, newStatus: string) => {
     try {
-        await api.updateTaskStatus(task.id, { status: newStatus });
+        await api.updateTaskStatus({ 
+            id: task.id, 
+            taskStatusUpdateInputBody: { status: newStatus } 
+        });
         task.status = newStatus;
     } catch(e) {
         console.error("Failed to update status", e);
@@ -80,7 +103,9 @@ const updateStatus = async (task: any, newStatus: string) => {
 const handleBulkStatus = async (newStatus: string) => {
     if (selectedTasks.value.length === 0) return;
     try {
-        await api.bulkUpdateTasksStatus({ bulkTaskUpdateInputBody: { ids: selectedTasks.value, status: newStatus } });
+        await api.bulkUpdateTasksStatus({ 
+            bulkTaskUpdateInputBody: { ids: selectedTasks.value, status: newStatus } 
+        });
         await fetchTasks();
     } catch (e) {
         console.error("Bulk update failed", e);
@@ -90,7 +115,9 @@ const handleBulkStatus = async (newStatus: string) => {
 const handleBulkDelete = async () => {
     if (selectedTasks.value.length === 0 || !confirm(`Delete ${selectedTasks.value.length} tasks?`)) return;
     try {
-        await api.bulkDeleteTasks({ bulkTaskDeleteInputBody: { ids: selectedTasks.value } });
+        await api.bulkDeleteTasks({ 
+            bulkTaskDeleteInputBody: { ids: selectedTasks.value } 
+        });
         await fetchTasks();
     } catch (e) {
         console.error("Bulk delete failed", e);
@@ -108,7 +135,9 @@ const handleBulkCreate = async () => {
             project_id: "", // Default
             description: ""
         }));
-        await api.bulkCreateTasks({ bulkTaskCreateInputBody: { tasks: tasksToCreate } });
+        await api.bulkCreateTasks({ 
+            bulkTaskCreateInputBody: { tasks: tasksToCreate } 
+        });
         showBulkDialog.value = false;
         bulkText.value = '';
         await fetchTasks();
@@ -124,7 +153,13 @@ const handleBulkCreate = async () => {
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
     <Toolbar class="mb-8 p-4 rounded-xl shadow-sm">
       <template #start>
-        <span class="text-2xl font-bold text-primary px-4">Tasks (GTD)</span>
+        <div class="flex items-center gap-4">
+            <span class="text-2xl font-bold text-primary px-4 hidden md:block">Tasks (GTD)</span>
+            <IconField iconPosition="left">
+                <InputIcon class="pi pi-search" />
+                <InputText v-model="searchQuery" placeholder="Search tasks..." class="w-full md:w-80" />
+            </IconField>
+        </div>
       </template>
       <template #end>
         <div class="flex gap-2">
@@ -152,7 +187,7 @@ const handleBulkCreate = async () => {
     </div>
 
     <div v-else class="space-y-4">
-      <Card v-for="task in tasks" :key="task.id" class="shadow-sm transition-all" :class="{'border-primary-500 bg-primary-50/50': selectedTasks.includes(task.id)}">
+      <Card v-for="task in filteredTasks" :key="task.id" class="shadow-sm transition-all" :class="{'border-primary-500 bg-primary-50/50': selectedTasks.includes(task.id)}">
         <template #content>
             <div class="flex items-center gap-4">
                 <Checkbox v-model="selectedTasks" :value="task.id" />
@@ -179,8 +214,8 @@ const handleBulkCreate = async () => {
         </template>
       </Card>
       
-      <div v-if="tasks.length === 0" class="text-center text-gray-500 py-8">
-        No tasks found.
+      <div v-if="filteredTasks.length === 0" class="text-center text-gray-500 py-8">
+        {{ searchQuery ? 'No tasks match your search.' : 'No tasks found.' }}
       </div>
     </div>
 

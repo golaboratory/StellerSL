@@ -157,3 +157,25 @@ func (s *Service) UnassignUser(ctx context.Context, tenantID, projectID, userID 
 		})
 	})
 }
+
+func (s *Service) ListMembers(ctx context.Context, tenantID, projectID string) (*task.AccountUserListOutput, error) {
+	var users []db.User
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		users, err = q.ListProjectMembers(ctx, db.ParseUUID(projectID))
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &task.AccountUserListOutput{}
+	for _, u := range users {
+		resp.Body.Items = append(resp.Body.Items, task.AccountUser{
+			ID:    u.ID.String(),
+			Email: u.Email,
+			Name:  u.Name,
+		})
+	}
+	return resp, nil
+}

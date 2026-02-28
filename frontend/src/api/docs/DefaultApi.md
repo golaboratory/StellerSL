@@ -5,21 +5,31 @@ All URIs are relative to *http://localhost*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**addTeamMember**](#addteammember) | **POST** /teams/{id}/members | Add Team Member|
+|[**assignProjectUser**](#assignprojectuser) | **POST** /projects/{id}/users | Assign User to Project|
 |[**bulkCreateTasks**](#bulkcreatetasks) | **POST** /tasks/bulk | Bulk Create Tasks|
 |[**bulkDeleteTasks**](#bulkdeletetasks) | **DELETE** /tasks/bulk | Bulk Delete Tasks|
 |[**bulkUpdateTasksStatus**](#bulkupdatetasksstatus) | **PATCH** /tasks/bulk/status | Bulk Update Tasks Status|
 |[**createProject**](#createproject) | **POST** /projects | Create Project|
 |[**createTask**](#createtask) | **POST** /tasks | Create Task|
 |[**createTeam**](#createteam) | **POST** /teams | Create Team|
+|[**deleteProject**](#deleteproject) | **DELETE** /projects/{id} | Delete Project|
 |[**deleteTask**](#deletetask) | **DELETE** /tasks/{id} | Delete Task|
 |[**getDashboardStats**](#getdashboardstats) | **GET** /dashboard | Dashboard Stats|
+|[**getProject**](#getproject) | **GET** /projects/{id} | Get Project|
 |[**getUserGrowth**](#getusergrowth) | **GET** /growth | User Growth|
 |[**listBadges**](#listbadges) | **GET** /badges | User Badges|
+|[**listProjectTasks**](#listprojecttasks) | **GET** /projects/{id}/tasks | List Project Tasks|
+|[**listProjectUsers**](#listprojectusers) | **GET** /projects/{id}/users | List Project Users|
 |[**listProjects**](#listprojects) | **GET** /projects | List Projects|
 |[**listTasks**](#listtasks) | **GET** /tasks | List Tasks|
+|[**listTeamMembers**](#listteammembers) | **GET** /teams/{id}/members | List Team Members|
 |[**listTeams**](#listteams) | **GET** /teams | List Teams|
 |[**login**](#login) | **POST** /auth/login | User Login|
 |[**register**](#register) | **POST** /auth/register | User Registration|
+|[**removeTeamMember**](#removeteammember) | **DELETE** /teams/{id}/members/{user_id} | Remove Team Member|
+|[**unassignProjectUser**](#unassignprojectuser) | **DELETE** /projects/{id}/users/{user_id} | Unassign User from Project|
+|[**updateProfile**](#updateprofile) | **PUT** /auth/profile | Update User Profile|
+|[**updateProject**](#updateproject) | **PUT** /projects/{id} | Update Project|
 |[**updateTaskStatus**](#updatetaskstatus) | **PATCH** /tasks/{id}/status | Update Task Status|
 
 # **addTeamMember**
@@ -52,6 +62,61 @@ const { status, data } = await apiInstance.addTeamMember(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **teamMemberInputBody** | **TeamMemberInputBody**|  | |
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **assignProjectUser**
+> assignProjectUser(projectUserAssignmentInputBody)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ProjectUserAssignmentInputBody
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+let projectUserAssignmentInputBody: ProjectUserAssignmentInputBody; //
+
+const { status, data } = await apiInstance.assignProjectUser(
+    id,
+    projectUserAssignmentInputBody
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **projectUserAssignmentInputBody** | **ProjectUserAssignmentInputBody**|  | |
 | **id** | [**string**] |  | defaults to undefined|
 
 
@@ -389,6 +454,57 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **deleteProject**
+> deleteProject()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.deleteProject(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **deleteTask**
 > deleteTask()
 
@@ -465,6 +581,57 @@ This endpoint does not have any parameters.
 ### Return type
 
 **DashboardOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getProject**
+> ProjectOutputBody getProject()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.getProject(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**ProjectOutputBody**
 
 ### Authorization
 
@@ -572,6 +739,108 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **listProjectTasks**
+> ProjectTaskListOutputBody listProjectTasks()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.listProjectTasks(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**ProjectTaskListOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **listProjectUsers**
+> AccountUserListOutputBody listProjectUsers()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.listProjectUsers(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**AccountUserListOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **listProjects**
 > ProjectListOutputBody listProjects()
 
@@ -641,6 +910,57 @@ This endpoint does not have any parameters.
 ### Return type
 
 **TaskListOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **listTeamMembers**
+> TeamMemberListOutputBody listTeamMembers()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.listTeamMembers(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**TeamMemberListOutputBody**
 
 ### Authorization
 
@@ -804,6 +1124,221 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **removeTeamMember**
+> removeTeamMember()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+let userId: string; // (default to undefined)
+
+const { status, data } = await apiInstance.removeTeamMember(
+    id,
+    userId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+| **userId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **unassignProjectUser**
+> unassignProjectUser()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+let userId: string; // (default to undefined)
+
+const { status, data } = await apiInstance.unassignProjectUser(
+    id,
+    userId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+| **userId** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **updateProfile**
+> updateProfile(updateProfileInputBody)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    UpdateProfileInputBody
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let updateProfileInputBody: UpdateProfileInputBody; //
+
+const { status, data } = await apiInstance.updateProfile(
+    updateProfileInputBody
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **updateProfileInputBody** | **UpdateProfileInputBody**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **updateProject**
+> ProjectOutputBody updateProject(projectInput)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ProjectInput
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+let projectInput: ProjectInput; //
+
+const { status, data } = await apiInstance.updateProject(
+    id,
+    projectInput
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **projectInput** | **ProjectInput**|  | |
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**ProjectOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
 |**0** | Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

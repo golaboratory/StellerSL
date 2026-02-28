@@ -72,3 +72,15 @@ type BulkTaskDeleteInput struct {
 		IDs []string `json:"ids"`
 	}
 }
+
+type AccountUser struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+type AccountUserListOutput struct {
+	Body struct {
+		Items []AccountUser `json:"items"`
+	}
+}

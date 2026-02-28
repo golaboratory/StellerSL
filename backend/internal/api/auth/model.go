@@ -27,3 +27,10 @@ type LoginOutput struct {
 		} `json:"user"`
 	}
 }
+
+type UpdateProfileInput struct {
+	Body struct {
+		Name      string `json:"name" minLength:"1"`
+		AvatarUrl string `json:"avatar_url"`
+	}
+}

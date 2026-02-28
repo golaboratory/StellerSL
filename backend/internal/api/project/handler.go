@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/user/stellersl/backend/internal/api/task"
 )
 
 func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.Context) string) {
@@ -100,5 +101,15 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 			return nil, err
 		}
 		return nil, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "list-project-users",
+		Method:      http.MethodGet,
+		Path:        "/projects/{id}/users",
+		Summary:     "List Project Users",
+	}, func(ctx context.Context, input *ProjectIDInput) (*task.AccountUserListOutput, error) {
+		tenantID := getTenantID(ctx)
+		return service.ListMembers(ctx, tenantID, input.ID)
 	})
 }

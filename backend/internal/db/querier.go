@@ -32,6 +32,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserGrowth(ctx context.Context, userID uuid.UUID) (UserGrowth, error)
+	ListProjectMembers(ctx context.Context, projectID uuid.UUID) ([]User, error)
 	ListProjects(ctx context.Context) ([]Project, error)
 	ListTasks(ctx context.Context, projectID uuid.NullUUID) ([]Task, error)
 	ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error)
@@ -43,6 +44,7 @@ type Querier interface {
 	UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Task, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

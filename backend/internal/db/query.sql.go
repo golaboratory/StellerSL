@@ -456,6 +456,45 @@ func (q *Queries) GetUserGrowth(ctx context.Context, userID uuid.UUID) (UserGrow
 	return i, err
 }
 
+const listProjectMembers = `-- name: ListProjectMembers :many
+SELECT u.id, u.tenant_id, u.email, u.password_hash, u.name, u.avatar_url, u.created_at, u.updated_at
+FROM users u
+JOIN project_users pu ON u.id = pu.user_id
+WHERE pu.project_id = $1
+`
+
+func (q *Queries) ListProjectMembers(ctx context.Context, projectID uuid.UUID) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listProjectMembers, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Email,
+			&i.PasswordHash,
+			&i.Name,
+			&i.AvatarUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProjects = `-- name: ListProjects :many
 SELECT id, tenant_id, name, description, created_at, updated_at FROM projects ORDER BY created_at DESC
 `
@@ -762,6 +801,35 @@ func (q *Queries) UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusPara
 		&i.Status,
 		&i.Priority,
 		&i.DueDate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET name = $2, avatar_url = $3, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at
+`
+
+type UpdateUserParams struct {
+	ID        uuid.UUID      `json:"id"`
+	Name      string         `json:"name"`
+	AvatarUrl sql.NullString `json:"avatar_url"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUser, arg.ID, arg.Name, arg.AvatarUrl)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Name,
+		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

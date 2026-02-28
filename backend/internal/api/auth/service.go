@@ -93,3 +93,14 @@ func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) 
 	resp.Body.User.Email = user.Email
 	return resp, nil
 }
+
+func (s *Service) UpdateProfile(ctx context.Context, tenantID, userID string, input UpdateProfileInput) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		_, err := q.UpdateUser(ctx, db.UpdateUserParams{
+			ID:        db.ParseUUID(userID),
+			Name:      input.Body.Name,
+			AvatarUrl: sql.NullString{String: input.Body.AvatarUrl, Valid: input.Body.AvatarUrl != ""},
+		})
+		return err
+	})
+}

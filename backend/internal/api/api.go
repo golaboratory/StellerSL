@@ -47,7 +47,10 @@ func RegisterRoutes(api huma.API, conn *sql.DB) {
 	gamiSvc := gamification.NewService(conn, queries)
 
 	// 2. Register Handlers
-	auth.RegisterHandlers(api, authSvc, getTenantID)
+	auth.RegisterHandlers(api, authSvc, getTenantID, func(ctx context.Context) (auth.AuthInfo, error) {
+		a, err := getAuth(ctx)
+		return auth.AuthInfo{TenantID: a.TenantID, UserID: a.UserID}, err
+	})
 
 	dashboard.RegisterHandlers(api, dashSvc, func(ctx context.Context) (dashboard.AuthInfo, error) {
 		a, err := getAuth(ctx)
@@ -63,7 +66,7 @@ func RegisterRoutes(api huma.API, conn *sql.DB) {
 
 	team.RegisterHandlers(api, teamSvc, func(ctx context.Context) (team.AuthInfo, error) {
 		a, err := getAuth(ctx)
-		return team.AuthInfo{TenantID: a.TenantID}, err
+		return team.AuthInfo{TenantID: a.TenantID, UserID: a.UserID}, err
 	})
 
 	gamification.RegisterHandlers(api, gamiSvc, func(ctx context.Context) (gamification.AuthInfo, error) {

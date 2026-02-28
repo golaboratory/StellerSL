@@ -18,11 +18,23 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from './common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
 import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
+export interface AccountUser {
+    'email': string;
+    'id': string;
+    'name': string;
+}
+export interface AccountUserListOutputBody {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'items': Array<AccountUser> | null;
+}
 export interface BadgeItem {
     'description': string;
     'icon_slug': string;
@@ -72,14 +84,20 @@ export const BulkTaskUpdateInputBodyStatusEnum = {
 
 export type BulkTaskUpdateInputBodyStatusEnum = typeof BulkTaskUpdateInputBodyStatusEnum[keyof typeof BulkTaskUpdateInputBodyStatusEnum];
 
+export interface DailyActivityItem {
+    'completed': number;
+    'created': number;
+    'date': string;
+}
 export interface DashboardOutputBody {
     /**
      * A URL to the JSON Schema for this object.
      */
     '$schema'?: string;
     'completed_tasks': number;
-    'daily_activity': Array<Item> | null;
+    'daily_activity': Array<DailyActivityItem> | null;
     'pending_tasks': number;
+    'recent_activity': Array<RecentActivityItem> | null;
     'total_tasks': number;
 }
 export interface ErrorDetail {
@@ -132,11 +150,6 @@ export interface GrowthOutputBody {
     'exp': number;
     'level': number;
 }
-export interface Item {
-    'completed': number;
-    'created': number;
-    'date': string;
-}
 export interface LoginInputBody {
     /**
      * A URL to the JSON Schema for this object.
@@ -153,11 +166,22 @@ export interface LoginOutputBody {
     'token': string;
     'user': UserStruct;
 }
+export interface ProjectInput {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'Body': ProjectInputBodyStruct;
+}
 export interface ProjectInputBody {
     /**
      * A URL to the JSON Schema for this object.
      */
     '$schema'?: string;
+    'description': string;
+    'name': string;
+}
+export interface ProjectInputBodyStruct {
     'description': string;
     'name': string;
 }
@@ -198,26 +222,11 @@ export interface ProjectUserAssignmentInputBody {
     '$schema'?: string;
     'user_id': string;
 }
-export interface TeamMemberListOutputBody {
-    /**
-     * A URL to the JSON Schema for this object.
-     */
-    '$schema'?: string;
-    'items': Array<TeamMemberUser> | null;
-}
-export interface TeamMemberUser {
-    'email': string;
-    'id': string;
-    'name': string;
-}
-export interface ProjectOutput {
-    'body': ProjectOutputBody;
-}
-export interface ProjectTaskListOutput {
-    'body': ProjectTaskListOutputBody;
-}
-export interface TeamMemberListOutput {
-    'body': TeamMemberListOutputBody;
+export interface RecentActivityItem {
+    'action': string;
+    'date': string;
+    'id': number;
+    'task_title': string;
 }
 export interface RegisterInputBody {
     /**
@@ -225,6 +234,7 @@ export interface RegisterInputBody {
      */
     '$schema'?: string;
     'email': string;
+    'invite_team_id'?: string;
     'name': string;
     'password': string;
     'tenant_id': string;
@@ -252,6 +262,7 @@ export const TaskInputBodyStatusEnum = {
 export type TaskInputBodyStatusEnum = typeof TaskInputBodyStatusEnum[keyof typeof TaskInputBodyStatusEnum];
 
 export interface TaskItem {
+    'due_date'?: string;
     'id': string;
     'priority': number;
     'project_id': string;
@@ -331,6 +342,26 @@ export const TeamMemberInputBodyRoleEnum = {
 
 export type TeamMemberInputBodyRoleEnum = typeof TeamMemberInputBodyRoleEnum[keyof typeof TeamMemberInputBodyRoleEnum];
 
+export interface TeamMemberListOutputBody {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'items': Array<TeamMemberUser> | null;
+}
+export interface TeamMemberUser {
+    'email': string;
+    'id': string;
+    'name': string;
+}
+export interface UpdateProfileInputBody {
+    /**
+     * A URL to the JSON Schema for this object.
+     */
+    '$schema'?: string;
+    'avatar_url': string;
+    'name': string;
+}
 export interface UserStruct {
     'email': string;
     'id': string;
@@ -375,6 +406,45 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(teamMemberInputBody, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Assign User to Project
+         * @param {string} id 
+         * @param {ProjectUserAssignmentInputBody} projectUserAssignmentInputBody 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        assignProjectUser: async (id: string, projectUserAssignmentInputBody: ProjectUserAssignmentInputBody, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('assignProjectUser', 'id', id)
+            // verify required parameter 'projectUserAssignmentInputBody' is not null or undefined
+            assertParamExists('assignProjectUser', 'projectUserAssignmentInputBody', projectUserAssignmentInputBody)
+            const localVarPath = `/projects/{id}/users`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(projectUserAssignmentInputBody, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -593,6 +663,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Delete Project
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteProject: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteProject', 'id', id)
+            const localVarPath = `/projects/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Delete Task
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -633,6 +737,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          */
         getDashboardStats: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/dashboard`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json,application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get Project
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getProject: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getProject', 'id', id)
+            const localVarPath = `/projects/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -717,6 +855,74 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary List Project Tasks
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listProjectTasks: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('listProjectTasks', 'id', id)
+            const localVarPath = `/projects/{id}/tasks`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json,application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List Project Users
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listProjectUsers: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('listProjectUsers', 'id', id)
+            const localVarPath = `/projects/{id}/users`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json,application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary List Projects
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -753,6 +959,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          */
         listTasks: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/tasks`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/json,application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary List Team Members
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listTeamMembers: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('listTeamMembers', 'id', id)
+            const localVarPath = `/teams/{id}/members`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -877,6 +1117,156 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Remove Team Member
+         * @param {string} id 
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        removeTeamMember: async (id: string, userId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('removeTeamMember', 'id', id)
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('removeTeamMember', 'userId', userId)
+            const localVarPath = `/teams/{id}/members/{user_id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Unassign User from Project
+         * @param {string} id 
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        unassignProjectUser: async (id: string, userId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('unassignProjectUser', 'id', id)
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('unassignProjectUser', 'userId', userId)
+            const localVarPath = `/projects/{id}/users/{user_id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
+                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Accept'] = 'application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update User Profile
+         * @param {UpdateProfileInputBody} updateProfileInputBody 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateProfile: async (updateProfileInputBody: UpdateProfileInputBody, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'updateProfileInputBody' is not null or undefined
+            assertParamExists('updateProfile', 'updateProfileInputBody', updateProfileInputBody)
+            const localVarPath = `/auth/profile`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateProfileInputBody, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update Project
+         * @param {string} id 
+         * @param {ProjectInput} projectInput 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateProject: async (id: string, projectInput: ProjectInput, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateProject', 'id', id)
+            // verify required parameter 'projectInput' is not null or undefined
+            assertParamExists('updateProject', 'projectInput', projectInput)
+            const localVarPath = `/projects/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json,application/problem+json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(projectInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Update Task Status
          * @param {string} id 
          * @param {TaskStatusUpdateInputBody} taskStatusUpdateInputBody 
@@ -935,6 +1325,20 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.addTeamMember(id, teamMemberInputBody, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.addTeamMember']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Assign User to Project
+         * @param {string} id 
+         * @param {ProjectUserAssignmentInputBody} projectUserAssignmentInputBody 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async assignProjectUser(id: string, projectUserAssignmentInputBody: ProjectUserAssignmentInputBody, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.assignProjectUser(id, projectUserAssignmentInputBody, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.assignProjectUser']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1017,6 +1421,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Delete Project
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteProject(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteProject(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.deleteProject']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Delete Task
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1038,6 +1455,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getDashboardStats(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.getDashboardStats']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get Project
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getProject(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectOutputBody>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getProject(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getProject']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1066,6 +1496,32 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary List Project Tasks
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listProjectTasks(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectTaskListOutputBody>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listProjectTasks(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.listProjectTasks']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List Project Users
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listProjectUsers(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AccountUserListOutputBody>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listProjectUsers(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.listProjectUsers']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary List Projects
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1086,6 +1542,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.listTasks(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.listTasks']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary List Team Members
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listTeamMembers(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TeamMemberListOutputBody>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listTeamMembers(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.listTeamMembers']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1128,6 +1597,61 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Remove Team Member
+         * @param {string} id 
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async removeTeamMember(id: string, userId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.removeTeamMember(id, userId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.removeTeamMember']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Unassign User from Project
+         * @param {string} id 
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async unassignProjectUser(id: string, userId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.unassignProjectUser(id, userId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.unassignProjectUser']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update User Profile
+         * @param {UpdateProfileInputBody} updateProfileInputBody 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateProfile(updateProfileInputBody: UpdateProfileInputBody, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateProfile(updateProfileInputBody, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateProfile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update Project
+         * @param {string} id 
+         * @param {ProjectInput} projectInput 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateProject(id: string, projectInput: ProjectInput, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ProjectOutputBody>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateProject(id, projectInput, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateProject']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Update Task Status
          * @param {string} id 
          * @param {TaskStatusUpdateInputBody} taskStatusUpdateInputBody 
@@ -1158,6 +1682,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         addTeamMember(requestParameters: DefaultApiAddTeamMemberRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
             return localVarFp.addTeamMember(requestParameters.id, requestParameters.teamMemberInputBody, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Assign User to Project
+         * @param {DefaultApiAssignProjectUserRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        assignProjectUser(requestParameters: DefaultApiAssignProjectUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.assignProjectUser(requestParameters.id, requestParameters.projectUserAssignmentInputBody, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1221,6 +1755,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary Delete Project
+         * @param {DefaultApiDeleteProjectRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteProject(requestParameters: DefaultApiDeleteProjectRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteProject(requestParameters.id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Delete Task
          * @param {DefaultApiDeleteTaskRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1237,6 +1781,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         getDashboardStats(options?: RawAxiosRequestConfig): AxiosPromise<DashboardOutputBody> {
             return localVarFp.getDashboardStats(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get Project
+         * @param {DefaultApiGetProjectRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getProject(requestParameters: DefaultApiGetProjectRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProjectOutputBody> {
+            return localVarFp.getProject(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1258,6 +1812,26 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary List Project Tasks
+         * @param {DefaultApiListProjectTasksRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listProjectTasks(requestParameters: DefaultApiListProjectTasksRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProjectTaskListOutputBody> {
+            return localVarFp.listProjectTasks(requestParameters.id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List Project Users
+         * @param {DefaultApiListProjectUsersRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listProjectUsers(requestParameters: DefaultApiListProjectUsersRequest, options?: RawAxiosRequestConfig): AxiosPromise<AccountUserListOutputBody> {
+            return localVarFp.listProjectUsers(requestParameters.id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary List Projects
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1273,6 +1847,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         listTasks(options?: RawAxiosRequestConfig): AxiosPromise<TaskListOutputBody> {
             return localVarFp.listTasks(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary List Team Members
+         * @param {DefaultApiListTeamMembersRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listTeamMembers(requestParameters: DefaultApiListTeamMembersRequest, options?: RawAxiosRequestConfig): AxiosPromise<TeamMemberListOutputBody> {
+            return localVarFp.listTeamMembers(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1305,6 +1889,46 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary Remove Team Member
+         * @param {DefaultApiRemoveTeamMemberRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        removeTeamMember(requestParameters: DefaultApiRemoveTeamMemberRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.removeTeamMember(requestParameters.id, requestParameters.userId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Unassign User from Project
+         * @param {DefaultApiUnassignProjectUserRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        unassignProjectUser(requestParameters: DefaultApiUnassignProjectUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.unassignProjectUser(requestParameters.id, requestParameters.userId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update User Profile
+         * @param {DefaultApiUpdateProfileRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateProfile(requestParameters: DefaultApiUpdateProfileRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.updateProfile(requestParameters.updateProfileInputBody, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update Project
+         * @param {DefaultApiUpdateProjectRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateProject(requestParameters: DefaultApiUpdateProjectRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProjectOutputBody> {
+            return localVarFp.updateProject(requestParameters.id, requestParameters.projectInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Update Task Status
          * @param {DefaultApiUpdateTaskStatusRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1323,6 +1947,15 @@ export interface DefaultApiAddTeamMemberRequest {
     readonly id: string
 
     readonly teamMemberInputBody: TeamMemberInputBody
+}
+
+/**
+ * Request parameters for assignProjectUser operation in DefaultApi.
+ */
+export interface DefaultApiAssignProjectUserRequest {
+    readonly id: string
+
+    readonly projectUserAssignmentInputBody: ProjectUserAssignmentInputBody
 }
 
 /**
@@ -1368,9 +2001,44 @@ export interface DefaultApiCreateTeamRequest {
 }
 
 /**
+ * Request parameters for deleteProject operation in DefaultApi.
+ */
+export interface DefaultApiDeleteProjectRequest {
+    readonly id: string
+}
+
+/**
  * Request parameters for deleteTask operation in DefaultApi.
  */
 export interface DefaultApiDeleteTaskRequest {
+    readonly id: string
+}
+
+/**
+ * Request parameters for getProject operation in DefaultApi.
+ */
+export interface DefaultApiGetProjectRequest {
+    readonly id: string
+}
+
+/**
+ * Request parameters for listProjectTasks operation in DefaultApi.
+ */
+export interface DefaultApiListProjectTasksRequest {
+    readonly id: string
+}
+
+/**
+ * Request parameters for listProjectUsers operation in DefaultApi.
+ */
+export interface DefaultApiListProjectUsersRequest {
+    readonly id: string
+}
+
+/**
+ * Request parameters for listTeamMembers operation in DefaultApi.
+ */
+export interface DefaultApiListTeamMembersRequest {
     readonly id: string
 }
 
@@ -1386,6 +2054,40 @@ export interface DefaultApiLoginRequest {
  */
 export interface DefaultApiRegisterRequest {
     readonly registerInputBody: RegisterInputBody
+}
+
+/**
+ * Request parameters for removeTeamMember operation in DefaultApi.
+ */
+export interface DefaultApiRemoveTeamMemberRequest {
+    readonly id: string
+
+    readonly userId: string
+}
+
+/**
+ * Request parameters for unassignProjectUser operation in DefaultApi.
+ */
+export interface DefaultApiUnassignProjectUserRequest {
+    readonly id: string
+
+    readonly userId: string
+}
+
+/**
+ * Request parameters for updateProfile operation in DefaultApi.
+ */
+export interface DefaultApiUpdateProfileRequest {
+    readonly updateProfileInputBody: UpdateProfileInputBody
+}
+
+/**
+ * Request parameters for updateProject operation in DefaultApi.
+ */
+export interface DefaultApiUpdateProjectRequest {
+    readonly id: string
+
+    readonly projectInput: ProjectInput
 }
 
 /**
@@ -1412,36 +2114,15 @@ export class DefaultApi extends BaseAPI {
         return DefaultApiFp(this.configuration).addTeamMember(requestParameters.id, requestParameters.teamMemberInputBody, options).then((request) => request(this.axios, this.basePath));
     }
 
-    public getProject(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ProjectOutput> {
-        return this.axios.get(`${this.basePath}/projects/${id}`, options);
-    }
-
-    public updateProject(id: string, projectInputBody: ProjectInputBody, options?: RawAxiosRequestConfig): AxiosPromise<ProjectOutput> {
-        return this.axios.put(`${this.basePath}/projects/${id}`, { body: projectInputBody }, options);
-    }
-
-    public deleteProject(id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-        return this.axios.delete(`${this.basePath}/projects/${id}`, options);
-    }
-
-    public listProjectTasks(id: string, options?: RawAxiosRequestConfig): AxiosPromise<ProjectTaskListOutput> {
-        return this.axios.get(`${this.basePath}/projects/${id}/tasks`, options);
-    }
-
-    public assignProjectUser(id: string, user_id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-        return this.axios.post(`${this.basePath}/projects/${id}/users`, { user_id }, options);
-    }
-
-    public unassignProjectUser(id: string, user_id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-        return this.axios.delete(`${this.basePath}/projects/${id}/users/${user_id}`, options);
-    }
-
-    public listTeamMembers(id: string, options?: RawAxiosRequestConfig): AxiosPromise<TeamMemberListOutput> {
-        return this.axios.get(`${this.basePath}/teams/${id}/members`, options);
-    }
-
-    public removeTeamMember(id: string, user_id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-        return this.axios.delete(`${this.basePath}/teams/${id}/members/${user_id}`, options);
+    /**
+     * 
+     * @summary Assign User to Project
+     * @param {DefaultApiAssignProjectUserRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public assignProjectUser(requestParameters: DefaultApiAssignProjectUserRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).assignProjectUser(requestParameters.id, requestParameters.projectUserAssignmentInputBody, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1512,6 +2193,17 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @summary Delete Project
+     * @param {DefaultApiDeleteProjectRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public deleteProject(requestParameters: DefaultApiDeleteProjectRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).deleteProject(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Delete Task
      * @param {DefaultApiDeleteTaskRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1529,6 +2221,17 @@ export class DefaultApi extends BaseAPI {
      */
     public getDashboardStats(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).getDashboardStats(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get Project
+     * @param {DefaultApiGetProjectRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getProject(requestParameters: DefaultApiGetProjectRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getProject(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1553,6 +2256,28 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @summary List Project Tasks
+     * @param {DefaultApiListProjectTasksRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public listProjectTasks(requestParameters: DefaultApiListProjectTasksRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).listProjectTasks(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List Project Users
+     * @param {DefaultApiListProjectUsersRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public listProjectUsers(requestParameters: DefaultApiListProjectUsersRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).listProjectUsers(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary List Projects
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1569,6 +2294,17 @@ export class DefaultApi extends BaseAPI {
      */
     public listTasks(options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).listTasks(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary List Team Members
+     * @param {DefaultApiListTeamMembersRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public listTeamMembers(requestParameters: DefaultApiListTeamMembersRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).listTeamMembers(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1601,6 +2337,50 @@ export class DefaultApi extends BaseAPI {
      */
     public register(requestParameters: DefaultApiRegisterRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).register(requestParameters.registerInputBody, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Remove Team Member
+     * @param {DefaultApiRemoveTeamMemberRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public removeTeamMember(requestParameters: DefaultApiRemoveTeamMemberRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).removeTeamMember(requestParameters.id, requestParameters.userId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Unassign User from Project
+     * @param {DefaultApiUnassignProjectUserRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public unassignProjectUser(requestParameters: DefaultApiUnassignProjectUserRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).unassignProjectUser(requestParameters.id, requestParameters.userId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update User Profile
+     * @param {DefaultApiUpdateProfileRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public updateProfile(requestParameters: DefaultApiUpdateProfileRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).updateProfile(requestParameters.updateProfileInputBody, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update Project
+     * @param {DefaultApiUpdateProjectRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public updateProject(requestParameters: DefaultApiUpdateProjectRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).updateProject(requestParameters.id, requestParameters.projectInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -33,10 +33,10 @@ const fetchTeamDetails = async () => {
     try {
         const [teamsRes, membersRes] = await Promise.all([
             api.listTeams(),
-            api.listTeamMembers(teamID)
+            api.listTeamMembers({ id: teamID })
         ]);
         team.value = teamsRes.data.items?.find((t: any) => t.id === teamID);
-        members.value = membersRes.data.body.items || [];
+        members.value = membersRes.data.items || [];
     } catch (err) {
         console.error('Failed to fetch team details', err);
         toast.showToast('error', 'Error', 'Failed to load team details');
@@ -51,7 +51,10 @@ const handleAddMember = async () => {
     if (!newMemberID.value) return;
     addLoading.value = true;
     try {
-        await api.addTeamMember({ id: teamID, teamMemberInputBody: { user_id: newMemberID.value, role: 'member' } });
+        await api.addTeamMember({ 
+            id: teamID, 
+            teamMemberInputBody: { user_id: newMemberID.value, role: 'member' } 
+        });
         newMemberID.value = '';
         toast.showToast('success', 'Success', 'Member added to team');
         await fetchTeamDetails();
@@ -71,7 +74,7 @@ const removeMember = (userID: string, userName: string) => {
         acceptProps: { label: 'Remove', severity: 'danger' },
         accept: async () => {
             try {
-                await api.removeTeamMember(teamID, userID);
+                await api.removeTeamMember({ id: teamID, userId: userID });
                 toast.showToast('success', 'Success', 'Member removed');
                 await fetchTeamDetails();
             } catch (err) {

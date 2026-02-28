@@ -4,6 +4,12 @@ SELECT * FROM users WHERE email = $1;
 -- name: GetUserByID :one
 SELECT * FROM users WHERE id = $1;
 
+-- name: UpdateUser :one
+UPDATE users
+SET name = $2, avatar_url = $3, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING *;
+
 -- name: CreateUser :one
 INSERT INTO users (tenant_id, email, password_hash, name)
 VALUES ($1, $2, $3, $4)
@@ -78,6 +84,12 @@ INSERT INTO project_users (project_id, user_id) VALUES ($1, $2) ON CONFLICT DO N
 
 -- name: UnassignProjectUser :exec
 DELETE FROM project_users WHERE project_id = $1 AND user_id = $2;
+
+-- name: ListProjectMembers :many
+SELECT u.*
+FROM users u
+JOIN project_users pu ON u.id = pu.user_id
+WHERE pu.project_id = $1;
 
 -- name: ListTasks :many
 SELECT * FROM tasks WHERE project_id = COALESCE($1, project_id) ORDER BY created_at DESC;

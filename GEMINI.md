@@ -56,10 +56,16 @@ PC、タブレット、スマートフォンなど、あらゆるデバイスか
 - クエリを追加・変更する場合は、`backend/sql/query.sql` を編集し、`sqlc generate` (または `docker-compose exec backend sqlc generate`) を実行すること。
 - RLS (Row Level Security) を考慮し、セッション変数 `app.current_tenant_id` を利用するクエリ設計を行う。
 
-### 3-2. API更新サイクル
+### 3-2. APIクライアント生成 (OpenAPI)
+- `frontend/src/api/**` 配下のファイルは `OpenAPI Generator` によって自動生成されるため、**直接編集してはいけない**。
+- API定義が変更された場合は、バックエンドを起動した状態で `.\generate-api.ps1` (Windows) または `./generate-api.sh` (Unix) を実行すること。
+- スクリプト内部では、起動中のバックエンドから `openapi.json` を取得し、`openapi-generator-cli` を用いてクライアントコードを再生成する。
+
+### 3-3. API更新サイクル
 1. バックエンドで `huma` を用いてエンドポイントを実装/更新。
-2. `.\generate-api.ps1` (Windows) または `./generate-api.sh` (Unix) を実行。
+2. 上記の生成スクリプトを実行して API クライアントを更新。
 3. `frontend/src/api` に生成された型安全なクラスを利用して UI を実装。
+
 
 ## 4. ディレクトリ構造
 

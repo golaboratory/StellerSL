@@ -7,8 +7,9 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **$schema** | **string** | A URL to the JSON Schema for this object. | [optional] [readonly] [default to undefined]
 **completed_tasks** | **number** |  | [default to undefined]
-**daily_activity** | [**Array&lt;Item&gt;**](Item.md) |  | [default to undefined]
+**daily_activity** | [**Array&lt;DailyActivityItem&gt;**](DailyActivityItem.md) |  | [default to undefined]
 **pending_tasks** | **number** |  | [default to undefined]
+**recent_activity** | [**Array&lt;RecentActivityItem&gt;**](RecentActivityItem.md) |  | [default to undefined]
 **total_tasks** | **number** |  | [default to undefined]
 
 ## Example
@@ -21,6 +22,7 @@ const instance: DashboardOutputBody = {
     completed_tasks,
     daily_activity,
     pending_tasks,
+    recent_activity,
     total_tasks,
 };
 ```

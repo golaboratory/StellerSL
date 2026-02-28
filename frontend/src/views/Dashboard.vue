@@ -99,6 +99,9 @@ const getAvatarConfig = () => {
           <router-link to="/calendar">
             <Button icon="pi pi-calendar" label="Calendar" text />
           </router-link>
+          <router-link to="/profile">
+            <Button icon="pi pi-user" label="Profile" text />
+          </router-link>
           <Button icon="pi pi-moon" text @click="toggleDarkMode" />
           <span class="font-medium hidden md:inline">Welcome, {{ auth.user?.name }}</span>
           <Button icon="pi pi-sign-out" label="Logout" severity="secondary" text @click="handleLogout" />

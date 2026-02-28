@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**due_date** | **string** |  | [optional] [default to undefined]
 **id** | **string** |  | [default to undefined]
 **priority** | **number** |  | [default to undefined]
 **project_id** | **string** |  | [default to undefined]
@@ -17,6 +18,7 @@ Name | Type | Description | Notes
 import { TaskItem } from './api';
 
 const instance: TaskItem = {
+    due_date,
     id,
     priority,
     project_id,

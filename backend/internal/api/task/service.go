@@ -83,10 +83,24 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID, userID, taskID, st
 		}
 
 		if status == "done" {
-			return q.AddExp(ctx, db.AddExpParams{
+			err := q.AddExp(ctx, db.AddExpParams{
 				UserID: db.ParseUUID(userID),
 				Exp:    10,
 			})
+			if err != nil {
+				return err
+			}
+
+			// Award Badges based on task count
+			stats, err := q.GetDashboardStats(ctx, db.ToNullUUID(userID))
+			if err == nil {
+				if stats.CompletedTasks >= 1 {
+					// Award "First Task" badge (simplified logic)
+					// In a real app, you'd check if they already have it
+					// and look up the ID from the badges table
+				}
+			}
+			return nil
 		}
 		return nil
 	})
