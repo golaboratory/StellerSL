@@ -48,11 +48,7 @@ func (s *Service) GetStats(ctx context.Context, tenantID, userID string) (*Dashb
 	resp.Body.CompletedTasks = stats.CompletedTasks
 
 	for _, a := range activities {
-		resp.Body.DailyActivity = append(resp.Body.DailyActivity, struct {
-			Date      string `json:"date"`
-			Created   int64  `json:"created"`
-			Completed int64  `json:"completed"`
-		}{
+		resp.Body.DailyActivity = append(resp.Body.DailyActivity, DailyActivityItem{
 			Date:      a.Date,
 			Created:   a.CreatedCount,
 			Completed: a.CompletedCount,
@@ -60,12 +56,7 @@ func (s *Service) GetStats(ctx context.Context, tenantID, userID string) (*Dashb
 	}
 
 	for _, r := range recent {
-		resp.Body.RecentActivity = append(resp.Body.RecentActivity, struct {
-			ID        int64  `json:"id"`
-			Action    string `json:"action"`
-			Date      string `json:"date"`
-			TaskTitle string `json:"task_title"`
-		}{
+		resp.Body.RecentActivity = append(resp.Body.RecentActivity, RecentActivityItem{
 			ID:        r.ID,
 			Action:    r.Action,
 			Date:      r.Date,
