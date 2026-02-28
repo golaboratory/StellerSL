@@ -58,8 +58,23 @@ func (q *Queries) AssignProjectUser(ctx context.Context, arg AssignProjectUserPa
 	return err
 }
 
+const awardBadge = `-- name: AwardBadge :exec
+INSERT INTO user_badges (user_id, badge_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
+`
+
+type AwardBadgeParams struct {
+	UserID  uuid.UUID `json:"user_id"`
+	BadgeID uuid.UUID `json:"badge_id"`
+}
+
+func (q *Queries) AwardBadge(ctx context.Context, arg AwardBadgeParams) error {
+	_, err := q.db.ExecContext(ctx, awardBadge, arg.UserID, arg.BadgeID)
+	return err
+}
+
 const bulkDeleteTasks = `-- name: BulkDeleteTasks :exec
-DELETE FROM tasks WHERE id = ANY($1::uuid[])
+UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP 
+WHERE id = ANY($1::uuid[])
 `
 
 func (q *Queries) BulkDeleteTasks(ctx context.Context, dollar_1 []uuid.UUID) error {
@@ -68,7 +83,8 @@ func (q *Queries) BulkDeleteTasks(ctx context.Context, dollar_1 []uuid.UUID) err
 }
 
 const bulkUpdateTasksStatus = `-- name: BulkUpdateTasksStatus :exec
-UPDATE tasks SET status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($1::uuid[])
+UPDATE tasks SET status = $2, updated_at = CURRENT_TIMESTAMP 
+WHERE id = ANY($1::uuid[]) AND deleted_at IS NULL
 `
 
 type BulkUpdateTasksStatusParams struct {
@@ -110,7 +126,7 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks (tenant_id, project_id, assigned_to, title, description, status, priority, due_date)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, created_at, updated_at
+RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at
 `
 
 type CreateTaskParams struct {
@@ -146,6 +162,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.Status,
 		&i.Priority,
 		&i.DueDate,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -227,7 +244,7 @@ func (q *Queries) DeleteProject(ctx context.Context, id uuid.UUID) error {
 }
 
 const deleteTask = `-- name: DeleteTask :exec
-DELETE FROM tasks WHERE id = $1
+UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1
 `
 
 func (q *Queries) DeleteTask(ctx context.Context, id uuid.UUID) error {
@@ -281,7 +298,7 @@ SELECT
     COUNT(*) FILTER (WHERE status != 'done') as pending_tasks,
     COUNT(*) FILTER (WHERE status = 'done') as completed_tasks
 FROM tasks 
-WHERE (assigned_to = $1 OR assigned_to IS NULL)
+WHERE deleted_at IS NULL AND (assigned_to = $1 OR assigned_to IS NULL)
 `
 
 type GetDashboardStatsRow struct {
@@ -360,7 +377,7 @@ func (q *Queries) GetRecentActivity(ctx context.Context, userID uuid.UUID) ([]Ge
 }
 
 const getTask = `-- name: GetTask :one
-SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, created_at, updated_at FROM tasks WHERE id = $1
+SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at FROM tasks WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetTask(ctx context.Context, id uuid.UUID) (Task, error) {
@@ -376,6 +393,7 @@ func (q *Queries) GetTask(ctx context.Context, id uuid.UUID) (Task, error) {
 		&i.Status,
 		&i.Priority,
 		&i.DueDate,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -456,6 +474,39 @@ func (q *Queries) GetUserGrowth(ctx context.Context, userID uuid.UUID) (UserGrow
 	return i, err
 }
 
+const listAllBadges = `-- name: ListAllBadges :many
+SELECT id, name, description, icon_slug, requirement_type FROM badges
+`
+
+func (q *Queries) ListAllBadges(ctx context.Context) ([]Badge, error) {
+	rows, err := q.db.QueryContext(ctx, listAllBadges)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Badge
+	for rows.Next() {
+		var i Badge
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.IconSlug,
+			&i.RequirementType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProjectMembers = `-- name: ListProjectMembers :many
 SELECT u.id, u.tenant_id, u.email, u.password_hash, u.name, u.avatar_url, u.created_at, u.updated_at
 FROM users u
@@ -496,11 +547,18 @@ func (q *Queries) ListProjectMembers(ctx context.Context, projectID uuid.UUID) (
 }
 
 const listProjects = `-- name: ListProjects :many
-SELECT id, tenant_id, name, description, created_at, updated_at FROM projects ORDER BY created_at DESC
+SELECT id, tenant_id, name, description, created_at, updated_at FROM projects 
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListProjects(ctx context.Context) ([]Project, error) {
-	rows, err := q.db.QueryContext(ctx, listProjects)
+type ListProjectsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListProjects(ctx context.Context, arg ListProjectsParams) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, listProjects, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -530,11 +588,20 @@ func (q *Queries) ListProjects(ctx context.Context) ([]Project, error) {
 }
 
 const listTasks = `-- name: ListTasks :many
-SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, created_at, updated_at FROM tasks WHERE project_id = COALESCE($1, project_id) ORDER BY created_at DESC
+SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at FROM tasks 
+WHERE deleted_at IS NULL AND project_id = COALESCE($1, project_id) 
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) ListTasks(ctx context.Context, projectID uuid.NullUUID) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, listTasks, projectID)
+type ListTasksParams struct {
+	ProjectID uuid.NullUUID `json:"project_id"`
+	Limit     int32         `json:"limit"`
+	Offset    int32         `json:"offset"`
+}
+
+func (q *Queries) ListTasks(ctx context.Context, arg ListTasksParams) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, listTasks, arg.ProjectID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -552,6 +619,7 @@ func (q *Queries) ListTasks(ctx context.Context, projectID uuid.NullUUID) ([]Tas
 			&i.Status,
 			&i.Priority,
 			&i.DueDate,
+			&i.DeletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -608,11 +676,18 @@ func (q *Queries) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User
 }
 
 const listTeams = `-- name: ListTeams :many
-SELECT id, tenant_id, name, created_at, updated_at FROM teams ORDER BY created_at DESC
+SELECT id, tenant_id, name, created_at, updated_at FROM teams 
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListTeams(ctx context.Context) ([]Team, error) {
-	rows, err := q.db.QueryContext(ctx, listTeams)
+type ListTeamsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListTeams(ctx context.Context, arg ListTeamsParams) ([]Team, error) {
+	rows, err := q.db.QueryContext(ctx, listTeams, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -690,6 +765,51 @@ func (q *Queries) RemoveTeamMember(ctx context.Context, arg RemoveTeamMemberPara
 	return err
 }
 
+const searchUsers = `-- name: SearchUsers :many
+SELECT id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at FROM users 
+WHERE (email ILIKE '%' || $1 || '%' OR name ILIKE '%' || $1 || '%')
+ORDER BY name ASC
+LIMIT $2 OFFSET $3
+`
+
+type SearchUsersParams struct {
+	Column1 sql.NullString `json:"column_1"`
+	Limit   int32          `json:"limit"`
+	Offset  int32          `json:"offset"`
+}
+
+func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsers, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Email,
+			&i.PasswordHash,
+			&i.Name,
+			&i.AvatarUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const unassignProjectUser = `-- name: UnassignProjectUser :exec
 DELETE FROM project_users WHERE project_id = $1 AND user_id = $2
 `
@@ -740,8 +860,8 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 const updateTask = `-- name: UpdateTask :one
 UPDATE tasks 
 SET title = $2, description = $3, status = $4, priority = $5, due_date = $6, updated_at = CURRENT_TIMESTAMP 
-WHERE id = $1 
-RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, created_at, updated_at
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at
 `
 
 type UpdateTaskParams struct {
@@ -773,6 +893,7 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, e
 		&i.Status,
 		&i.Priority,
 		&i.DueDate,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -780,7 +901,9 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, e
 }
 
 const updateTaskStatus = `-- name: UpdateTaskStatus :one
-UPDATE tasks SET status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, created_at, updated_at
+UPDATE tasks SET status = $2, updated_at = CURRENT_TIMESTAMP 
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at
 `
 
 type UpdateTaskStatusParams struct {
@@ -801,6 +924,7 @@ func (q *Queries) UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusPara
 		&i.Status,
 		&i.Priority,
 		&i.DueDate,
+		&i.DeletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

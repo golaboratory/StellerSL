@@ -13,6 +13,8 @@ import InputText from 'primevue/inputtext';
 import Dialog from 'primevue/dialog';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { useConfirm } from "primevue/useconfirm";
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
 
 const route = useRoute();
 const router = useRouter();
@@ -28,7 +30,9 @@ const members = ref<AccountUser[]>([]);
 const loading = ref(true);
 
 const assignDialog = ref(false);
-const newMemberID = ref('');
+const userSearchQuery = ref('');
+const searchResults = ref<AccountUser[]>([]);
+const searchLoading = ref(false);
 const assignLoading = ref(false);
 
 const fetchProjectDetails = async () => {
@@ -53,25 +57,32 @@ const fetchProjectDetails = async () => {
 
 onMounted(fetchProjectDetails);
 
-const getStatusSeverity = (status: string) => {
-    switch (status) {
-        case 'todo': return 'secondary';
-        case 'doing': return 'warn';
-        case 'done': return 'success';
-        default: return 'info';
+const handleSearchUsers = async () => {
+    if (userSearchQuery.value.length < 2) {
+        searchResults.value = [];
+        return;
+    }
+    searchLoading.value = true;
+    try {
+        const res = await api.searchUsers({ q: userSearchQuery.value });
+        searchResults.value = res.data.items || [];
+    } catch (e) {
+        console.error("Search failed", e);
+    } finally {
+        searchLoading.value = false;
     }
 };
 
-const handleAssignMember = async () => {
-    if (!newMemberID.value) return;
+const handleAssignMember = async (userID: string) => {
     assignLoading.value = true;
     try {
         await api.assignProjectUser({ 
             id: projectID, 
-            projectUserAssignmentInputBody: { user_id: newMemberID.value } 
+            projectUserAssignmentInputBody: { user_id: userID } 
         });
-        newMemberID.value = '';
         assignDialog.value = false;
+        userSearchQuery.value = '';
+        searchResults.value = [];
         toast.showToast('success', 'Success', 'User assigned to project');
         await fetchProjectDetails();
     } catch (e) {
@@ -116,6 +127,15 @@ const deleteProject = () => {
         }
     });
 };
+
+const getStatusSeverity = (status: string) => {
+    switch (status) {
+        case 'todo': return 'secondary';
+        case 'doing': return 'warn';
+        case 'done': return 'success';
+        default: return 'info';
+    }
+};
 </script>
 
 <template>
@@ -125,10 +145,25 @@ const deleteProject = () => {
     <Dialog v-model:visible="assignDialog" header="Assign Member" :modal="true" class="w-full max-w-md">
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
-                <label for="assignUserID" class="font-medium">User ID (UUID)</label>
-                <InputText id="assignUserID" v-model="newMemberID" placeholder="Enter User ID" />
+                <label for="searchUser" class="font-medium">Search User by Name or Email</label>
+                <IconField iconPosition="left">
+                    <InputIcon class="pi pi-search" />
+                    <InputText id="searchUser" v-model="userSearchQuery" placeholder="Type to search..." class="w-full" @input="handleSearchUsers" />
+                </IconField>
             </div>
-            <Button label="Assign" :loading="assignLoading" @click="handleAssignMember" />
+            
+            <div class="max-h-64 overflow-y-auto border rounded-lg border-gray-100 dark:border-gray-800">
+                <div v-if="searchLoading" class="p-4 text-center"><i class="pi pi-spin pi-spinner mr-2"></i>Searching...</div>
+                <div v-else-if="searchResults.length === 0 && userSearchQuery.length >= 2" class="p-4 text-center text-gray-500">No users found.</div>
+                
+                <div v-for="user in searchResults" :key="user.id" class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-900 border-b last:border-0 border-gray-100 dark:border-gray-800">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold">{{ user.name }}</span>
+                        <span class="text-xs text-gray-500">{{ user.email }}</span>
+                    </div>
+                    <Button icon="pi pi-plus" size="small" rounded text @click="handleAssignMember(user.id)" :disabled="members.some(m => m.id === user.id)" />
+                </div>
+            </div>
         </div>
     </Dialog>
 

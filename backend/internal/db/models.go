@@ -51,6 +51,7 @@ type Task struct {
 	Status      string         `json:"status"`
 	Priority    sql.NullInt32  `json:"priority"`
 	DueDate     sql.NullTime   `json:"due_date"`
+	DeletedAt   sql.NullTime   `json:"deleted_at"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 	UpdatedAt   sql.NullTime   `json:"updated_at"`
 }

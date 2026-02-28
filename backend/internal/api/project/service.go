@@ -19,11 +19,14 @@ func NewService(conn *sql.DB, queries *db.Queries) *Service {
 	return &Service{conn: conn, queries: queries}
 }
 
-func (s *Service) List(ctx context.Context, tenantID string) (*ProjectListOutput, error) {
+func (s *Service) List(ctx context.Context, tenantID string, limit, offset int32) (*ProjectListOutput, error) {
 	var projects []db.Project
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		projects, err = q.ListProjects(ctx)
+		projects, err = q.ListProjects(ctx, db.ListProjectsParams{
+			Limit:  limit,
+			Offset: offset,
+		})
 		return err
 	})
 	if err != nil {
@@ -119,7 +122,11 @@ func (s *Service) ListTasks(ctx context.Context, tenantID, id string) (*ProjectT
 	var tasksList []db.Task
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		tasksList, err = q.ListTasks(ctx, uuid.NullUUID{UUID: db.ParseUUID(id), Valid: true})
+		tasksList, err = q.ListTasks(ctx, db.ListTasksParams{
+			ProjectID: uuid.NullUUID{UUID: db.ParseUUID(id), Valid: true},
+			Limit:     100, // Default for project detail
+			Offset:    0,
+		})
 		return err
 	})
 	if err != nil {
@@ -163,6 +170,32 @@ func (s *Service) ListMembers(ctx context.Context, tenantID, projectID string) (
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
 		users, err = q.ListProjectMembers(ctx, db.ParseUUID(projectID))
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &task.AccountUserListOutput{}
+	for _, u := range users {
+		resp.Body.Items = append(resp.Body.Items, task.AccountUser{
+			ID:    u.ID.String(),
+			Email: u.Email,
+			Name:  u.Name,
+		})
+	}
+	return resp, nil
+}
+
+func (s *Service) SearchUsers(ctx context.Context, tenantID, query string) (*task.AccountUserListOutput, error) {
+	var users []db.User
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		users, err = q.SearchUsers(ctx, db.SearchUsersParams{
+			Column1: query,
+			Limit:   20,
+			Offset:  0,
+		})
 		return err
 	})
 	if err != nil {

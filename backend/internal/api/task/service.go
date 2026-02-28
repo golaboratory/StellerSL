@@ -4,25 +4,36 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/user/stellersl/backend/internal/api/gamification"
 	"github.com/user/stellersl/backend/internal/db"
 )
 
 type Service struct {
 	conn    *sql.DB
 	queries *db.Queries
+	engine  *gamification.BadgeEngine
 }
 
 func NewService(conn *sql.DB, queries *db.Queries) *Service {
-	return &Service{conn: conn, queries: queries}
+	return &Service{
+		conn:    conn,
+		queries: queries,
+		engine:  gamification.NewBadgeEngine(queries),
+	}
 }
 
-func (s *Service) List(ctx context.Context, tenantID string) (*TaskListOutput, error) {
+func (s *Service) List(ctx context.Context, tenantID string, limit, offset int32) (*TaskListOutput, error) {
 	var tasksList []db.Task
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		tasksList, err = q.ListTasks(ctx, uuid.NullUUID{})
+		tasksList, err = q.ListTasks(ctx, db.ListTasksParams{
+			ProjectID: uuid.NullUUID{},
+			Limit:     limit,
+			Offset:    offset,
+		})
 		return err
 	})
 	if err != nil {
@@ -47,6 +58,13 @@ func (s *Service) Create(ctx context.Context, tenantID string, input TaskInput) 
 	var t db.Task
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
+		dueDate := sql.NullTime{}
+		if input.Body.DueDate != "" {
+			if parsed, err := time.Parse(time.RFC3339, input.Body.DueDate); err == nil {
+				dueDate = sql.NullTime{Time: parsed, Valid: true}
+			}
+		}
+
 		t, err = q.CreateTask(ctx, db.CreateTaskParams{
 			TenantID:    db.ParseUUID(tenantID),
 			ProjectID:   db.ToNullUUID(input.Body.ProjectID),
@@ -55,9 +73,50 @@ func (s *Service) Create(ctx context.Context, tenantID string, input TaskInput) 
 			Description: sql.NullString{String: input.Body.Description, Valid: input.Body.Description != ""},
 			Status:      input.Body.Status,
 			Priority:    sql.NullInt32{Int32: int32(input.Body.Priority), Valid: true},
-			DueDate:     sql.NullTime{}, // TODO: Parse from input
+			DueDate:     dueDate,
 		})
 		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &TaskOutput{}
+	resp.Body.ID = t.ID.String()
+	resp.Body.Title = t.Title
+	resp.Body.Status = t.Status
+	return resp, nil
+}
+
+func (s *Service) Update(ctx context.Context, tenantID, userID, taskID string, input TaskInput) (*TaskOutput, error) {
+	var t db.Task
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		dueDate := sql.NullTime{}
+		if input.Body.DueDate != "" {
+			if parsed, err := time.Parse(time.RFC3339, input.Body.DueDate); err == nil {
+				dueDate = sql.NullTime{Time: parsed, Valid: true}
+			}
+		}
+
+		t, err = q.UpdateTask(ctx, db.UpdateTaskParams{
+			ID:          db.ParseUUID(taskID),
+			Title:       input.Body.Title,
+			Description: sql.NullString{String: input.Body.Description, Valid: input.Body.Description != ""},
+			Status:      input.Body.Status,
+			Priority:    sql.NullInt32{Int32: int32(input.Body.Priority), Valid: true},
+			DueDate:     dueDate,
+		})
+		if err != nil {
+			return err
+		}
+
+		if t.Status == "done" {
+			_ = q.AddExp(ctx, db.AddExpParams{UserID: db.ParseUUID(userID), Exp: 10})
+			_ = q.UpdateLevel(ctx, db.ParseUUID(userID))
+			_ = s.engine.AwardBadges(ctx, db.ParseUUID(userID), "task_completed")
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -83,24 +142,9 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID, userID, taskID, st
 		}
 
 		if status == "done" {
-			err := q.AddExp(ctx, db.AddExpParams{
-				UserID: db.ParseUUID(userID),
-				Exp:    10,
-			})
-			if err != nil {
-				return err
-			}
-
-			// Award Badges based on task count
-			stats, err := q.GetDashboardStats(ctx, db.ToNullUUID(userID))
-			if err == nil {
-				if stats.CompletedTasks >= 1 {
-					// Award "First Task" badge (simplified logic)
-					// In a real app, you'd check if they already have it
-					// and look up the ID from the badges table
-				}
-			}
-			return nil
+			_ = q.AddExp(ctx, db.AddExpParams{UserID: db.ParseUUID(userID), Exp: 10})
+			_ = q.UpdateLevel(ctx, db.ParseUUID(userID))
+			_ = s.engine.AwardBadges(ctx, db.ParseUUID(userID), "task_completed")
 		}
 		return nil
 	})
@@ -150,10 +194,10 @@ func (s *Service) BulkUpdateStatus(ctx context.Context, tenantID, userID, status
 		}
 
 		if status == "done" {
-			return q.AddExp(ctx, db.AddExpParams{
-				UserID: db.ParseUUID(userID),
-				Exp:    int32(10 * len(ids)),
-			})
+			uid := db.ParseUUID(userID)
+			_ = q.AddExp(ctx, db.AddExpParams{UserID: uid, Exp: int32(10 * len(ids))})
+			_ = q.UpdateLevel(ctx, uid)
+			_ = s.engine.AwardBadges(ctx, uid, "task_completed")
 		}
 		return nil
 	})

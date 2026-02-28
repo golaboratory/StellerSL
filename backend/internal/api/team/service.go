@@ -16,11 +16,14 @@ func NewService(conn *sql.DB, queries *db.Queries) *Service {
 	return &Service{conn: conn, queries: queries}
 }
 
-func (s *Service) List(ctx context.Context, tenantID string) (*TeamListOutput, error) {
+func (s *Service) List(ctx context.Context, tenantID string, limit, offset int32) (*TeamListOutput, error) {
 	var teams []db.Team
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		teams, err = q.ListTeams(ctx)
+		teams, err = q.ListTeams(ctx, db.ListTeamsParams{
+			Limit:  limit,
+			Offset: offset,
+		})
 		return err
 	})
 	if err != nil {

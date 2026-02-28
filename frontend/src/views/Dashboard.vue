@@ -2,11 +2,15 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { DefaultApi, Configuration } from '../api';
+import { DefaultApi, DashboardOutputBody } from '../api';
 import axiosInstance from '../api/axios';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
+import Card from 'primevue/card';
+import Toolbar from 'primevue/toolbar';
+import Button from 'primevue/button';
+import ProgressBar from 'primevue/progressbar';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -14,7 +18,7 @@ const toast = useToast();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 
-const stats = ref<any>({ total_tasks: 0, pending_tasks: 0, completed_tasks: 0, daily_activity: [] });
+const stats = ref<DashboardOutputBody>({ total_tasks: 0, pending_tasks: 0, completed_tasks: 0, daily_activity: [], recent_activity: [] });
 const growth = ref<any>({ level: 1, exp: 0, character_type: 'default' });
 const badges = ref<any[]>([]);
 const loading = ref(true);
@@ -49,7 +53,7 @@ onMounted(async () => {
     badges.value = newBadges;
     localStorage.setItem('badge_count', newBadges.length.toString());
   } catch (err) {
-
+    console.error('Failed to fetch dashboard data', err);
   } finally {
     loading.value = false;
   }
@@ -73,6 +77,10 @@ const getAvatarConfig = () => {
     if (level >= 10) return { icon: 'pi-bolt', color: 'text-yellow-500', bg: 'bg-yellow-100' };
     if (level >= 5) return { icon: 'pi-star-fill', color: 'text-orange-500', bg: 'bg-orange-100' };
     return { icon: 'pi-user', color: 'text-primary-500', bg: 'bg-primary-100' };
+};
+
+const formatAction = (action: string) => {
+    return action.replace('_', ' ').toUpperCase();
 };
 </script>
 
@@ -162,7 +170,7 @@ const getAvatarConfig = () => {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Daily Activity -->
         <Card class="shadow-sm">
             <template #title>Daily Activity</template>
@@ -181,18 +189,40 @@ const getAvatarConfig = () => {
             </template>
         </Card>
 
+        <!-- Recent Activity -->
+        <Card class="shadow-sm">
+            <template #title>Recent Activity</template>
+            <template #content>
+                <div class="space-y-4">
+                    <div v-for="log in stats.recent_activity" :key="log.id" class="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium">{{ log.task_title }}</span>
+                            <span class="text-xs text-gray-500">{{ log.date }}</span>
+                        </div>
+                        <Tag :value="formatAction(log.action)" :severity="log.action.includes('completed') ? 'success' : 'info'" />
+                    </div>
+                    <div v-if="!stats.recent_activity || stats.recent_activity.length === 0" class="text-center py-8 text-gray-400 italic">
+                        No recent activity.
+                    </div>
+                </div>
+            </template>
+        </Card>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6">
         <!-- Badges -->
         <Card class="shadow-sm">
             <template #title>Achievements</template>
             <template #content>
-                <div v-if="badges.length === 0" class="flex flex-col items-center justify-center h-64 text-gray-400 italic">
+                <div v-if="badges.length === 0" class="flex flex-col items-center justify-center h-32 text-gray-400 italic">
                     <i class="pi pi-lock text-4xl mb-4"></i>
                     <span>Complete tasks to earn badges!</span>
                 </div>
-                <div v-else class="grid grid-cols-3 md:grid-cols-4 gap-4">
-                    <div v-for="badge in badges" :key="badge.id" class="flex flex-col items-center gap-2 p-2 border rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800">
-                        <i :class="'pi ' + badge.icon_slug" class="text-2xl text-yellow-500"></i>
+                <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div v-for="badge in badges" :key="badge.id" class="flex flex-col items-center gap-2 p-4 border rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 transition-transform hover:scale-105">
+                        <i :class="'pi ' + badge.icon_slug" class="text-3xl text-yellow-500"></i>
                         <span class="text-xs font-bold text-center">{{ badge.name }}</span>
+                        <span class="text-[10px] text-gray-500 text-center">{{ badge.description }}</span>
                     </div>
                 </div>
             </template>

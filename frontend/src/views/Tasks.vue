@@ -23,6 +23,10 @@ const loading = ref(true);
 const selectedTasks = ref<string[]>([]);
 const searchQuery = ref('');
 
+// Pagination
+const limit = ref(50);
+const offset = ref(0);
+
 // Bulk Create Dialog
 const showBulkDialog = ref(false);
 const bulkText = ref('');
@@ -51,9 +55,15 @@ const handleUpdateTask = async () => {
     if (!editTask.value) return;
     editLoading.value = true;
     try {
-        await api.updateTaskStatus({ 
+        await api.updateTask({ 
             id: editTask.value.id, 
-            taskStatusUpdateInputBody: { status: editTask.value.status } 
+            taskInput: {
+                title: editTask.value.title,
+                status: editTask.value.status,
+                priority: editTask.value.priority,
+                description: editTask.value.description || "",
+                project_id: editTask.value.project_id
+            }
         });
         showEditDialog.value = false;
         await fetchTasks();
@@ -67,7 +77,7 @@ const handleUpdateTask = async () => {
 const fetchTasks = async () => {
     loading.value = true;
     try {
-        const response = await api.listTasks();
+        const response = await api.listTasks({ limit: limit.value, offset: offset.value });
         tasks.value = response.data.items || [];
         selectedTasks.value = [];
     } catch (err) {
@@ -95,6 +105,9 @@ const updateStatus = async (task: any, newStatus: string) => {
             taskStatusUpdateInputBody: { status: newStatus } 
         });
         task.status = newStatus;
+        if (newStatus === 'done') {
+            await fetchTasks(); // Refresh to update EXP/Badges
+        }
     } catch(e) {
         console.error("Failed to update status", e);
     }
@@ -132,7 +145,7 @@ const handleBulkCreate = async () => {
     try {
         const tasksToCreate = lines.map(title => ({
             title,
-            project_id: "", // Default
+            project_id: "", 
             description: ""
         }));
         await api.bulkCreateTasks({ 
@@ -199,7 +212,7 @@ const handleBulkCreate = async () => {
                         </div>
                         <div class="flex items-center gap-2 mt-2">
                             <Tag :value="task.status.toUpperCase()" :severity="getStatusSeverity(task.status)" />
-                            <span v-if="task.due_date" class="text-xs text-gray-500">
+                            <span v-if="task.due_date && task.due_date !== '0001-01-01 00:00:00 +0000 UTC'" class="text-xs text-gray-500">
                                 <i class="pi pi-calendar mr-1"></i>{{ new Date(task.due_date).toLocaleDateString() }}
                             </span>
                         </div>
@@ -216,6 +229,12 @@ const handleBulkCreate = async () => {
       
       <div v-if="filteredTasks.length === 0" class="text-center text-gray-500 py-8">
         {{ searchQuery ? 'No tasks match your search.' : 'No tasks found.' }}
+      </div>
+
+      <!-- Pagination Simple -->
+      <div class="flex justify-center gap-2 mt-8">
+          <Button icon="pi pi-chevron-left" :disabled="offset === 0" @click="offset -= limit; fetchTasks()" text />
+          <Button icon="pi pi-chevron-right" :disabled="tasks.length < limit" @click="offset += limit; fetchTasks()" text />
       </div>
     </div>
 

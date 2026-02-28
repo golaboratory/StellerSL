@@ -12,15 +12,20 @@ type AuthInfo struct {
 	UserID   string
 }
 
+type ListTeamsInput struct {
+	Limit  int32 `query:"limit" default:"50" maximum:"200"`
+	Offset int32 `query:"offset" default:"0"`
+}
+
 func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Context) (AuthInfo, error)) {
 	huma.Register(api, huma.Operation{
 		OperationID: "list-teams",
 		Method:      http.MethodGet,
 		Path:        "/teams",
 		Summary:     "List Teams",
-	}, func(ctx context.Context, input *struct{}) (*TeamListOutput, error) {
+	}, func(ctx context.Context, input *ListTeamsInput) (*TeamListOutput, error) {
 		auth, _ := getAuth(ctx)
-		return service.List(ctx, auth.TenantID)
+		return service.List(ctx, auth.TenantID, input.Limit, input.Offset)
 	})
 
 	huma.Register(api, huma.Operation{

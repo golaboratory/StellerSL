@@ -14,6 +14,7 @@ type Querier interface {
 	AddExp(ctx context.Context, arg AddExpParams) error
 	AddTeamMember(ctx context.Context, arg AddTeamMemberParams) error
 	AssignProjectUser(ctx context.Context, arg AssignProjectUserParams) error
+	AwardBadge(ctx context.Context, arg AwardBadgeParams) error
 	BulkDeleteTasks(ctx context.Context, dollar_1 []uuid.UUID) error
 	BulkUpdateTasksStatus(ctx context.Context, arg BulkUpdateTasksStatusParams) error
 	CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error)
@@ -32,13 +33,15 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserGrowth(ctx context.Context, userID uuid.UUID) (UserGrowth, error)
+	ListAllBadges(ctx context.Context) ([]Badge, error)
 	ListProjectMembers(ctx context.Context, projectID uuid.UUID) ([]User, error)
-	ListProjects(ctx context.Context) ([]Project, error)
-	ListTasks(ctx context.Context, projectID uuid.NullUUID) ([]Task, error)
+	ListProjects(ctx context.Context, arg ListProjectsParams) ([]Project, error)
+	ListTasks(ctx context.Context, arg ListTasksParams) ([]Task, error)
 	ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error)
-	ListTeams(ctx context.Context) ([]Team, error)
+	ListTeams(ctx context.Context, arg ListTeamsParams) ([]Team, error)
 	ListUserBadges(ctx context.Context, userID uuid.UUID) ([]Badge, error)
 	RemoveTeamMember(ctx context.Context, arg RemoveTeamMemberParams) error
+	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error)
 	UnassignProjectUser(ctx context.Context, arg UnassignProjectUserParams) error
 	UpdateLevel(ctx context.Context, userID uuid.UUID) error
 	UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error)

@@ -8,15 +8,24 @@ import (
 	"github.com/user/stellersl/backend/internal/api/task"
 )
 
+type ListProjectsInput struct {
+	Limit  int32 `query:"limit" default:"50" maximum:"200"`
+	Offset int32 `query:"offset" default:"0"`
+}
+
+type UserSearchInput struct {
+	Query string `query:"q" minLength:"1"`
+}
+
 func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.Context) string) {
 	huma.Register(api, huma.Operation{
 		OperationID: "list-projects",
 		Method:      http.MethodGet,
 		Path:        "/projects",
 		Summary:     "List Projects",
-	}, func(ctx context.Context, input *struct{}) (*ProjectListOutput, error) {
+	}, func(ctx context.Context, input *ListProjectsInput) (*ProjectListOutput, error) {
 		tenantID := getTenantID(ctx)
-		return service.List(ctx, tenantID)
+		return service.List(ctx, tenantID, input.Limit, input.Offset)
 	})
 
 	huma.Register(api, huma.Operation{
@@ -49,8 +58,6 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 		Body ProjectInput `json:"body"`
 	}) (*ProjectOutput, error) {
 		tenantID := getTenantID(ctx)
-		// Huma might wrap the body. If input.Body is the struct, we use it.
-		// For consistency with other parts, usually it's input.Body.
 		return service.Update(ctx, tenantID, input.ID, input.Body)
 	})
 
@@ -111,5 +118,15 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 	}, func(ctx context.Context, input *ProjectIDInput) (*task.AccountUserListOutput, error) {
 		tenantID := getTenantID(ctx)
 		return service.ListMembers(ctx, tenantID, input.ID)
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "search-users",
+		Method:      http.MethodGet,
+		Path:        "/users/search",
+		Summary:     "Search Users",
+	}, func(ctx context.Context, input *UserSearchInput) (*task.AccountUserListOutput, error) {
+		tenantID := getTenantID(ctx)
+		return service.SearchUsers(ctx, tenantID, input.Query)
 	})
 }
