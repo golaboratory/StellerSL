@@ -1,0 +1,71 @@
+# Gemini CLI Project Command Policies
+# This file defines the rules for allowed shell commands within this project.
+
+# --- Common Navigation & Inspection (Linux/macOS/Windows) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^(ls|pwd|cat|grep|find|du|df|head|tail|dir|type|findstr|Get-ChildItem|Get-Content|echo)($| )'
+decision = "allow"
+priority = 100
+
+# --- Frontend (pnpm / npm / vite / vitest) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^(pnpm|npm|npx) (install|i|run|dev|build|test|lint|format|type-check|vite|vitest)($| )'
+decision = "allow"
+priority = 100
+
+# --- Backend (Go / air / sqlc) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^go (test|build|run|mod|fmt|get|tidy|list|vet)($| )'
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^air($| )'
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^sqlc (generate|vet|compile|diff)($| )'
+decision = "allow"
+priority = 100
+
+# --- Docker & Docker Compose ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^(docker-compose|docker compose) (up|down|ps|logs|build|restart|exec|run|stop|start)($| )'
+decision = "allow"
+priority = 100
+
+# --- Project Specific Scripts (Linux/macOS/Windows) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^(\.?[\/\\\]generate-api\.(sh|ps1))($| )'
+decision = "allow"
+priority = 110
+
+# --- Git (Read-only & Informational) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^git (status|diff|log|show|branch|remote|rev-parse|tag|describe|config --list|ls-files)($| )'
+decision = "allow"
+priority = 100
+
+# --- Git (State-changing - Require manual confirmation) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^git (add|commit|push|pull|checkout|merge|rebase|reset|stash|clean|cherry-pick)($| )'
+decision = "ask_user"
+priority = 100
+
+# --- Dangerous Commands (Explicitly ask user) ---
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = '^(rm|del|rd|rmdir|format|mkfs)($| )'
+decision = "ask_user"
+priority = 200
+deny_message = "Potentially dangerous command detected. Manual confirmation is required for file or system modification."
