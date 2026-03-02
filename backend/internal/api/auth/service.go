@@ -46,6 +46,10 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) error {
 			return err
 		}
 
+		if err := q.CreateUserGrowth(ctx, user.ID); err != nil {
+			return err
+		}
+
 		if input.Body.InviteTeamID != "" {
 			_ = q.AddTeamMember(ctx, db.AddTeamMemberParams{
 				TeamID: db.ParseUUID(input.Body.InviteTeamID),

@@ -17,14 +17,14 @@ const error = ref('');
 const loading = ref(false);
 
 const handleLogin = async () => {
-  loading.ref = true;
+  loading.value = true;
   error.value = '';
   
   try {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value }),
+      body: JSON.stringify({ body: { email: email.value, password: password.value } }),
     });
 
     if (!response.ok) {

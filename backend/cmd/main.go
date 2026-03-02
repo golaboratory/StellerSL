@@ -35,7 +35,11 @@ func main() {
 	// Middleware for tenant identification from host (MUST BE BEFORE humachi.New)
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Printf("Request: %s %s Host: %s X-Tenant-Host: %s\n", r.Method, r.URL.Path, r.Host, r.Header.Get("X-Tenant-Host"))
 			host := strings.Split(r.Host, ":")[0]
+			if tenantHost := r.Header.Get("X-Tenant-Host"); tenantHost != "" {
+				host = tenantHost
+			}
 			tenant, err := queries.GetTenantByDomain(r.Context(), host)
 			
 			// For local development on localhost, fallback to default tenant if not found

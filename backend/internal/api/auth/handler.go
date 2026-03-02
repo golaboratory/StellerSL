@@ -21,7 +21,7 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 		Summary:     "User Registration",
 	}, func(ctx context.Context, input *RegisterInput) (*struct{}, error) {
 		if err := service.Register(ctx, *input); err != nil {
-			return nil, huma.Error500InternalServerError("Failed to create user")
+			return nil, huma.Error500InternalServerError("Failed to create user: " + err.Error())
 		}
 		return nil, nil
 	})

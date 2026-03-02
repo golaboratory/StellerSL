@@ -3,6 +3,10 @@ import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { DefaultApi, Configuration } from '../api';
 import InputText from 'primevue/inputtext';
+import Card from 'primevue/card';
+import Password from 'primevue/password';
+import Message from 'primevue/message';
+import Button from 'primevue/button';
 
 const router = useRouter();
 const route = useRoute();
@@ -27,13 +31,11 @@ const handleSignup = async () => {
   
   try {
     await api.register({
-      registerInputBody: {
-        tenant_id: "00000000-0000-0000-0000-000000000001", // Default tenant for POC
-        email: email.value,
-        password: password.value,
-        name: name.value,
-        invite_team_id: inviteTeamID.value || undefined
-      }
+      tenant_id: "00000000-0000-0000-0000-000000000001", // Default tenant for POC
+      email: email.value,
+      password: password.value,
+      name: name.value,
+      invite_team_id: inviteTeamID.value || undefined
     });
     router.push('/login');
   } catch (err: any) {
@@ -67,7 +69,7 @@ const handleSignup = async () => {
           
           <div class="flex flex-col gap-2">
             <label for="password" class="font-semibold">Password</label>
-            <Password id="password" v-model="password" :feedback="true" toggleMask placeholder="Min 8 characters" required />
+            <Password id="password" v-model="password" :feedback="false" toggleMask placeholder="Min 8 characters" required />
           </div>
 
           <Message v-if="error" severity="error">{{ error }}</Message>
