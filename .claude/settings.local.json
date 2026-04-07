@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /d/Source/GitHub/StellerSL/backend/internal/api/*/handler.go /d/Source/GitHub/StellerSL/backend/internal/api/*/service.go)",
+      "Read(//d/Source/GitHub/StellerSL/frontend/**)",
+      "Bash(find:*)"
+    ]
+  }
+}
