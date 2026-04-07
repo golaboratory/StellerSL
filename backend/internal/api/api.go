@@ -26,7 +26,7 @@ func getAuth(ctx context.Context) (struct{ TenantID, UserID string }, error) {
 	tid := getTenantID(ctx)
 	uid, _ := ctx.Value("user_id").(string)
 	if uid == "" {
-		uid = "00000000-0000-0000-0000-000000000002"
+		return struct{ TenantID, UserID string }{}, huma.Error401Unauthorized("authentication required")
 	}
 	return struct{ TenantID, UserID string }{TenantID: tid, UserID: uid}, nil
 }

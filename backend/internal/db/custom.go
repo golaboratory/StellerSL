@@ -11,6 +11,11 @@ import (
 // WithTenant sets the tenant ID for the current session and returns a new Queries instance
 // This is used to enforce Row Level Security (RLS)
 func (q *Queries) WithTenant(ctx context.Context, db *sql.DB, tenantID string, fn func(*Queries) error) error {
+	// Validate tenantID as UUID to prevent SQL injection
+	if _, err := uuid.Parse(tenantID); err != nil {
+		return fmt.Errorf("invalid tenant ID: %w", err)
+	}
+
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

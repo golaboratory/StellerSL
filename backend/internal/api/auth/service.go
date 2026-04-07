@@ -73,12 +73,8 @@ func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) 
 		return nil, err
 	}
 
-	if strings.HasPrefix(user.PasswordHash, "$2a$") {
-		if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Body.Password)); err != nil {
-			return nil, err
-		}
-	} else if user.PasswordHash != input.Body.Password {
-		return nil, err
+	if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Body.Password)); err != nil {
+		return nil, fmt.Errorf("invalid credentials")
 	}
 
 	claims := &AuthClaims{
