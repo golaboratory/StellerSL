@@ -39,13 +39,49 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "get-team",
+		Method:      http.MethodGet,
+		Path:        "/teams/{id}",
+		Summary:     "Get Team",
+	}, func(ctx context.Context, input *struct{ ID string `path:"id"` }) (*TeamItem, error) {
+		auth, _ := getAuth(ctx)
+		return service.GetTeam(ctx, auth.TenantID, input.ID)
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "update-team",
+		Method:      http.MethodPut,
+		Path:        "/teams/{id}",
+		Summary:     "Update Team",
+	}, func(ctx context.Context, input *struct {
+		ID string `path:"id"`
+		TeamInput
+	}) (*TeamItem, error) {
+		auth, _ := getAuth(ctx)
+		return service.Update(ctx, auth.TenantID, auth.UserID, input.ID, input.Body.Name)
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "delete-team",
+		Method:      http.MethodDelete,
+		Path:        "/teams/{id}",
+		Summary:     "Delete Team",
+	}, func(ctx context.Context, input *struct{ ID string `path:"id"` }) (*struct{}, error) {
+		auth, _ := getAuth(ctx)
+		if err := service.Delete(ctx, auth.TenantID, auth.UserID, input.ID); err != nil {
+			return nil, huma.Error403Forbidden(err.Error())
+		}
+		return nil, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "add-team-member",
 		Method:      http.MethodPost,
 		Path:        "/teams/{id}/members",
 		Summary:     "Add Team Member",
 	}, func(ctx context.Context, input *TeamMemberInput) (*struct{}, error) {
 		auth, _ := getAuth(ctx)
-		if err := service.AddMember(ctx, auth.TenantID, input.ID, input.Body.UserID, input.Body.Role); err != nil {
+		if err := service.AddMember(ctx, auth.TenantID, auth.UserID, input.ID, input.Body.UserID, input.Body.Role); err != nil {
 			return nil, huma.Error500InternalServerError("Failed to add member")
 		}
 		return nil, nil
@@ -73,7 +109,7 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		UserID string `path:"user_id"`
 	}) (*struct{}, error) {
 		auth, _ := getAuth(ctx)
-		if err := service.RemoveMember(ctx, auth.TenantID, input.ID, input.UserID); err != nil {
+		if err := service.RemoveMember(ctx, auth.TenantID, auth.UserID, input.ID, input.UserID); err != nil {
 			return nil, err
 		}
 		return nil, nil

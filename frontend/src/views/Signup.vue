@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { DefaultApi, Configuration } from '../api';
+import axiosInstance from '../api/axios';
+import { DefaultApi } from '../api';
 import InputText from 'primevue/inputtext';
 import Card from 'primevue/card';
 import Password from 'primevue/password';
@@ -10,7 +11,7 @@ import Button from 'primevue/button';
 
 const router = useRouter();
 const route = useRoute();
-const api = new DefaultApi(new Configuration({ basePath: '/api' }));
+const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const name = ref('');
 const email = ref('');

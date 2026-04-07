@@ -29,13 +29,23 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "get-task",
+		Method:      http.MethodGet,
+		Path:        "/tasks/{id}",
+		Summary:     "Get Task",
+	}, func(ctx context.Context, input *struct{ ID string `path:"id"` }) (*TaskOutput, error) {
+		auth, _ := getAuth(ctx)
+		return service.Get(ctx, auth.TenantID, input.ID)
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "create-task",
 		Method:      http.MethodPost,
 		Path:        "/tasks",
 		Summary:     "Create Task",
 	}, func(ctx context.Context, input *TaskInput) (*TaskOutput, error) {
 		auth, _ := getAuth(ctx)
-		return service.Create(ctx, auth.TenantID, *input)
+		return service.Create(ctx, auth.TenantID, auth.UserID, *input)
 	})
 
 	huma.Register(api, huma.Operation{
@@ -68,7 +78,7 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		Summary:     "Bulk Create Tasks",
 	}, func(ctx context.Context, input *BulkTaskCreateInput) (*struct{}, error) {
 		auth, _ := getAuth(ctx)
-		if err := service.BulkCreate(ctx, auth.TenantID, *input); err != nil {
+		if err := service.BulkCreate(ctx, auth.TenantID, auth.UserID, *input); err != nil {
 			return nil, huma.Error500InternalServerError("Bulk create failed")
 		}
 		return nil, nil

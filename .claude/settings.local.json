@@ -6,7 +6,12 @@
       "Bash(find:*)",
       "Bash(go get:*)",
       "Bash(go build:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(sqlc generate:*)",
+      "Bash(docker compose:*)",
+      "Bash(where sqlc:*)",
+      "Bash(go install:*)",
+      "Bash(~/go/bin/sqlc generate:*)"
     ]
   }
 }

@@ -8,6 +8,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 type ActivityLog struct {
@@ -25,6 +26,18 @@ type Badge struct {
 	Description     sql.NullString `json:"description"`
 	IconSlug        string         `json:"icon_slug"`
 	RequirementType string         `json:"requirement_type"`
+}
+
+type Notification struct {
+	ID        uuid.UUID             `json:"id"`
+	TenantID  uuid.UUID             `json:"tenant_id"`
+	UserID    uuid.UUID             `json:"user_id"`
+	Type      string                `json:"type"`
+	Title     string                `json:"title"`
+	Message   sql.NullString        `json:"message"`
+	Data      pqtype.NullRawMessage `json:"data"`
+	ReadAt    sql.NullTime          `json:"read_at"`
+	CreatedAt sql.NullTime          `json:"created_at"`
 }
 
 type Project struct {
@@ -101,4 +114,12 @@ type UserGrowth struct {
 	Exp           int32        `json:"exp"`
 	CharacterType string       `json:"character_type"`
 	UpdatedAt     sql.NullTime `json:"updated_at"`
+}
+
+type UserStreak struct {
+	UserID       uuid.UUID    `json:"user_id"`
+	StreakType   string       `json:"streak_type"`
+	CurrentCount int32        `json:"current_count"`
+	MaxCount     int32        `json:"max_count"`
+	LastDate     sql.NullTime `json:"last_date"`
 }

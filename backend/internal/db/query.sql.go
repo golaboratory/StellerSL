@@ -8,9 +8,11 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/sqlc-dev/pqtype"
 )
 
 const addExp = `-- name: AddExp :exec
@@ -94,6 +96,107 @@ type BulkUpdateTasksStatusParams struct {
 
 func (q *Queries) BulkUpdateTasksStatus(ctx context.Context, arg BulkUpdateTasksStatusParams) error {
 	_, err := q.db.ExecContext(ctx, bulkUpdateTasksStatus, pq.Array(arg.Column1), arg.Status)
+	return err
+}
+
+const countDistinctProjectsCompletedToday = `-- name: CountDistinctProjectsCompletedToday :one
+SELECT COUNT(DISTINCT t.project_id)::int as count
+FROM activity_logs al
+JOIN tasks t ON al.task_id = t.id
+WHERE al.user_id = $1 AND al.action = 'task_completed' AND al.logged_at = CURRENT_DATE
+`
+
+func (q *Queries) CountDistinctProjectsCompletedToday(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countDistinctProjectsCompletedToday, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countProjectsByUser = `-- name: CountProjectsByUser :one
+SELECT COUNT(*)::int as count FROM project_users WHERE user_id = $1
+`
+
+func (q *Queries) CountProjectsByUser(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countProjectsByUser, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTasksCompletedOnWeekends = `-- name: CountTasksCompletedOnWeekends :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND EXTRACT(DOW FROM logged_at) IN (0, 6)
+`
+
+func (q *Queries) CountTasksCompletedOnWeekends(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countTasksCompletedOnWeekends, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTasksCompletedToday = `-- name: CountTasksCompletedToday :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND logged_at = CURRENT_DATE
+`
+
+func (q *Queries) CountTasksCompletedToday(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countTasksCompletedToday, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTasksCreatedToday = `-- name: CountTasksCreatedToday :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_created' AND logged_at = CURRENT_DATE
+`
+
+func (q *Queries) CountTasksCreatedToday(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countTasksCreatedToday, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUnreadNotifications = `-- name: CountUnreadNotifications :one
+SELECT COUNT(*)::int as count FROM notifications
+WHERE user_id = $1 AND read_at IS NULL
+`
+
+func (q *Queries) CountUnreadNotifications(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countUnreadNotifications, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createNotification = `-- name: CreateNotification :exec
+
+INSERT INTO notifications (tenant_id, user_id, type, title, message, data)
+VALUES ($1, $2, $3, $4, $5, $6)
+`
+
+type CreateNotificationParams struct {
+	TenantID uuid.UUID             `json:"tenant_id"`
+	UserID   uuid.UUID             `json:"user_id"`
+	Type     string                `json:"type"`
+	Title    string                `json:"title"`
+	Message  sql.NullString        `json:"message"`
+	Data     pqtype.NullRawMessage `json:"data"`
+}
+
+// === Notification Queries ===
+func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotificationParams) error {
+	_, err := q.db.ExecContext(ctx, createNotification,
+		arg.TenantID,
+		arg.UserID,
+		arg.Type,
+		arg.Title,
+		arg.Message,
+		arg.Data,
+	)
 	return err
 }
 
@@ -252,6 +355,15 @@ func (q *Queries) DeleteTask(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteTeam = `-- name: DeleteTeam :exec
+DELETE FROM teams WHERE id = $1
+`
+
+func (q *Queries) DeleteTeam(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteTeam, id)
+	return err
+}
+
 const getDailyActivity = `-- name: GetDailyActivity :many
 SELECT 
     logged_at::text as date,
@@ -312,6 +424,18 @@ func (q *Queries) GetDashboardStats(ctx context.Context, assignedTo uuid.NullUUI
 	var i GetDashboardStatsRow
 	err := row.Scan(&i.TotalTasks, &i.PendingTasks, &i.CompletedTasks)
 	return i, err
+}
+
+const getLastActivityDate = `-- name: GetLastActivityDate :one
+SELECT COALESCE(MAX(logged_at), '1970-01-01'::date)::date as last_date FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed'
+`
+
+func (q *Queries) GetLastActivityDate(ctx context.Context, userID uuid.UUID) (time.Time, error) {
+	row := q.db.QueryRowContext(ctx, getLastActivityDate, userID)
+	var last_date time.Time
+	err := row.Scan(&last_date)
+	return last_date, err
 }
 
 const getProject = `-- name: GetProject :one
@@ -376,6 +500,30 @@ func (q *Queries) GetRecentActivity(ctx context.Context, userID uuid.UUID) ([]Ge
 	return items, nil
 }
 
+const getStreak = `-- name: GetStreak :one
+
+SELECT user_id, streak_type, current_count, max_count, last_date FROM user_streaks WHERE user_id = $1 AND streak_type = $2
+`
+
+type GetStreakParams struct {
+	UserID     uuid.UUID `json:"user_id"`
+	StreakType string    `json:"streak_type"`
+}
+
+// === Streak Queries ===
+func (q *Queries) GetStreak(ctx context.Context, arg GetStreakParams) (UserStreak, error) {
+	row := q.db.QueryRowContext(ctx, getStreak, arg.UserID, arg.StreakType)
+	var i UserStreak
+	err := row.Scan(
+		&i.UserID,
+		&i.StreakType,
+		&i.CurrentCount,
+		&i.MaxCount,
+		&i.LastDate,
+	)
+	return i, err
+}
+
 const getTask = `-- name: GetTask :one
 SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at FROM tasks WHERE id = $1 AND deleted_at IS NULL
 `
@@ -398,6 +546,41 @@ func (q *Queries) GetTask(ctx context.Context, id uuid.UUID) (Task, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getTeam = `-- name: GetTeam :one
+
+SELECT id, tenant_id, name, created_at, updated_at FROM teams WHERE id = $1
+`
+
+// === Team Extra Queries ===
+func (q *Queries) GetTeam(ctx context.Context, id uuid.UUID) (Team, error) {
+	row := q.db.QueryRowContext(ctx, getTeam, id)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTeamMemberRole = `-- name: GetTeamMemberRole :one
+SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2
+`
+
+type GetTeamMemberRoleParams struct {
+	TeamID uuid.UUID `json:"team_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetTeamMemberRole(ctx context.Context, arg GetTeamMemberRoleParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, getTeamMemberRole, arg.TeamID, arg.UserID)
+	var role string
+	err := row.Scan(&role)
+	return role, err
 }
 
 const getTenantByDomain = `-- name: GetTenantByDomain :one
@@ -474,6 +657,30 @@ func (q *Queries) GetUserGrowth(ctx context.Context, userID uuid.UUID) (UserGrow
 	return i, err
 }
 
+const insertActivityLog = `-- name: InsertActivityLog :exec
+
+INSERT INTO activity_logs (tenant_id, user_id, task_id, action)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertActivityLogParams struct {
+	TenantID uuid.UUID     `json:"tenant_id"`
+	UserID   uuid.UUID     `json:"user_id"`
+	TaskID   uuid.NullUUID `json:"task_id"`
+	Action   string        `json:"action"`
+}
+
+// === Activity Log Queries ===
+func (q *Queries) InsertActivityLog(ctx context.Context, arg InsertActivityLogParams) error {
+	_, err := q.db.ExecContext(ctx, insertActivityLog,
+		arg.TenantID,
+		arg.UserID,
+		arg.TaskID,
+		arg.Action,
+	)
+	return err
+}
+
 const listAllBadges = `-- name: ListAllBadges :many
 SELECT id, name, description, icon_slug, requirement_type FROM badges
 `
@@ -493,6 +700,52 @@ func (q *Queries) ListAllBadges(ctx context.Context) ([]Badge, error) {
 			&i.Description,
 			&i.IconSlug,
 			&i.RequirementType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listNotifications = `-- name: ListNotifications :many
+SELECT id, tenant_id, user_id, type, title, message, data, read_at, created_at FROM notifications
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListNotificationsParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Limit  int32     `json:"limit"`
+	Offset int32     `json:"offset"`
+}
+
+func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]Notification, error) {
+	rows, err := q.db.QueryContext(ctx, listNotifications, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Notification
+	for rows.Next() {
+		var i Notification
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.UserID,
+			&i.Type,
+			&i.Title,
+			&i.Message,
+			&i.Data,
+			&i.ReadAt,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -715,6 +968,51 @@ func (q *Queries) ListTeams(ctx context.Context, arg ListTeamsParams) ([]Team, e
 	return items, nil
 }
 
+const listUnreadNotifications = `-- name: ListUnreadNotifications :many
+SELECT id, tenant_id, user_id, type, title, message, data, read_at, created_at FROM notifications
+WHERE user_id = $1 AND read_at IS NULL
+ORDER BY created_at DESC
+LIMIT $2
+`
+
+type ListUnreadNotificationsParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Limit  int32     `json:"limit"`
+}
+
+func (q *Queries) ListUnreadNotifications(ctx context.Context, arg ListUnreadNotificationsParams) ([]Notification, error) {
+	rows, err := q.db.QueryContext(ctx, listUnreadNotifications, arg.UserID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Notification
+	for rows.Next() {
+		var i Notification
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.UserID,
+			&i.Type,
+			&i.Title,
+			&i.Message,
+			&i.Data,
+			&i.ReadAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUserBadges = `-- name: ListUserBadges :many
 SELECT b.id, b.name, b.description, b.icon_slug, b.requirement_type
 FROM badges b
@@ -749,6 +1047,45 @@ func (q *Queries) ListUserBadges(ctx context.Context, userID uuid.UUID) ([]Badge
 		return nil, err
 	}
 	return items, nil
+}
+
+const markAllNotificationsRead = `-- name: MarkAllNotificationsRead :exec
+UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+WHERE user_id = $1 AND read_at IS NULL
+`
+
+func (q *Queries) MarkAllNotificationsRead(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, markAllNotificationsRead, userID)
+	return err
+}
+
+const markNotificationRead = `-- name: MarkNotificationRead :exec
+UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND user_id = $2
+`
+
+type MarkNotificationReadParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) error {
+	_, err := q.db.ExecContext(ctx, markNotificationRead, arg.ID, arg.UserID)
+	return err
+}
+
+const removeBadge = `-- name: RemoveBadge :exec
+DELETE FROM user_badges WHERE user_id = $1 AND badge_id = $2
+`
+
+type RemoveBadgeParams struct {
+	UserID  uuid.UUID `json:"user_id"`
+	BadgeID uuid.UUID `json:"badge_id"`
+}
+
+func (q *Queries) RemoveBadge(ctx context.Context, arg RemoveBadgeParams) error {
+	_, err := q.db.ExecContext(ctx, removeBadge, arg.UserID, arg.BadgeID)
+	return err
 }
 
 const removeTeamMember = `-- name: RemoveTeamMember :exec
@@ -810,6 +1147,22 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Use
 	return items, nil
 }
 
+const subtractExp = `-- name: SubtractExp :exec
+
+UPDATE user_growth SET exp = GREATEST(exp - $2, 0), updated_at = CURRENT_TIMESTAMP WHERE user_id = $1
+`
+
+type SubtractExpParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Exp    int32     `json:"exp"`
+}
+
+// === Gamification Extra Queries ===
+func (q *Queries) SubtractExp(ctx context.Context, arg SubtractExpParams) error {
+	_, err := q.db.ExecContext(ctx, subtractExp, arg.UserID, arg.Exp)
+	return err
+}
+
 const unassignProjectUser = `-- name: UnassignProjectUser :exec
 DELETE FROM project_users WHERE project_id = $1 AND user_id = $2
 `
@@ -824,12 +1177,42 @@ func (q *Queries) UnassignProjectUser(ctx context.Context, arg UnassignProjectUs
 	return err
 }
 
+const updateCharacterType = `-- name: UpdateCharacterType :exec
+UPDATE user_growth SET character_type = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1
+`
+
+type UpdateCharacterTypeParams struct {
+	UserID        uuid.UUID `json:"user_id"`
+	CharacterType string    `json:"character_type"`
+}
+
+func (q *Queries) UpdateCharacterType(ctx context.Context, arg UpdateCharacterTypeParams) error {
+	_, err := q.db.ExecContext(ctx, updateCharacterType, arg.UserID, arg.CharacterType)
+	return err
+}
+
 const updateLevel = `-- name: UpdateLevel :exec
 UPDATE user_growth SET level = (exp / 100) + 1 WHERE user_id = $1
 `
 
 func (q *Queries) UpdateLevel(ctx context.Context, userID uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, updateLevel, userID)
+	return err
+}
+
+const updatePassword = `-- name: UpdatePassword :exec
+
+UPDATE users SET password_hash = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1
+`
+
+type UpdatePasswordParams struct {
+	ID           uuid.UUID `json:"id"`
+	PasswordHash string    `json:"password_hash"`
+}
+
+// === Auth Extra Queries ===
+func (q *Queries) UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error {
+	_, err := q.db.ExecContext(ctx, updatePassword, arg.ID, arg.PasswordHash)
 	return err
 }
 
@@ -931,6 +1314,28 @@ func (q *Queries) UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusPara
 	return i, err
 }
 
+const updateTeam = `-- name: UpdateTeam :one
+UPDATE teams SET name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, tenant_id, name, created_at, updated_at
+`
+
+type UpdateTeamParams struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+func (q *Queries) UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error) {
+	row := q.db.QueryRowContext(ctx, updateTeam, arg.ID, arg.Name)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET name = $2, avatar_url = $3, updated_at = CURRENT_TIMESTAMP
@@ -958,4 +1363,32 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const upsertStreak = `-- name: UpsertStreak :exec
+INSERT INTO user_streaks (user_id, streak_type, current_count, max_count, last_date)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (user_id, streak_type) DO UPDATE SET
+    current_count = EXCLUDED.current_count,
+    max_count = GREATEST(user_streaks.max_count, EXCLUDED.max_count),
+    last_date = EXCLUDED.last_date
+`
+
+type UpsertStreakParams struct {
+	UserID       uuid.UUID    `json:"user_id"`
+	StreakType   string       `json:"streak_type"`
+	CurrentCount int32        `json:"current_count"`
+	MaxCount     int32        `json:"max_count"`
+	LastDate     sql.NullTime `json:"last_date"`
+}
+
+func (q *Queries) UpsertStreak(ctx context.Context, arg UpsertStreakParams) error {
+	_, err := q.db.ExecContext(ctx, upsertStreak,
+		arg.UserID,
+		arg.StreakType,
+		arg.CurrentCount,
+		arg.MaxCount,
+		arg.LastDate,
+	)
+	return err
 }

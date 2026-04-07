@@ -162,3 +162,107 @@ SELECT u.*
 FROM users u
 JOIN team_members tm ON u.id = tm.user_id
 WHERE tm.team_id = $1;
+
+-- === Activity Log Queries ===
+
+-- name: InsertActivityLog :exec
+INSERT INTO activity_logs (tenant_id, user_id, task_id, action)
+VALUES ($1, $2, $3, $4);
+
+-- name: CountTasksCreatedToday :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_created' AND logged_at = CURRENT_DATE;
+
+-- name: CountTasksCompletedToday :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND logged_at = CURRENT_DATE;
+
+-- name: CountTasksCompletedOnWeekends :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND EXTRACT(DOW FROM logged_at) IN (0, 6);
+
+-- name: CountDistinctProjectsCompletedToday :one
+SELECT COUNT(DISTINCT t.project_id)::int as count
+FROM activity_logs al
+JOIN tasks t ON al.task_id = t.id
+WHERE al.user_id = $1 AND al.action = 'task_completed' AND al.logged_at = CURRENT_DATE;
+
+-- name: GetLastActivityDate :one
+SELECT COALESCE(MAX(logged_at), '1970-01-01'::date)::date as last_date FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed';
+
+-- === Streak Queries ===
+
+-- name: GetStreak :one
+SELECT * FROM user_streaks WHERE user_id = $1 AND streak_type = $2;
+
+-- name: UpsertStreak :exec
+INSERT INTO user_streaks (user_id, streak_type, current_count, max_count, last_date)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (user_id, streak_type) DO UPDATE SET
+    current_count = EXCLUDED.current_count,
+    max_count = GREATEST(user_streaks.max_count, EXCLUDED.max_count),
+    last_date = EXCLUDED.last_date;
+
+-- === Gamification Extra Queries ===
+
+-- name: SubtractExp :exec
+UPDATE user_growth SET exp = GREATEST(exp - $2, 0), updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;
+
+-- name: RemoveBadge :exec
+DELETE FROM user_badges WHERE user_id = $1 AND badge_id = $2;
+
+-- name: UpdateCharacterType :exec
+UPDATE user_growth SET character_type = $2, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1;
+
+-- name: CountProjectsByUser :one
+SELECT COUNT(*)::int as count FROM project_users WHERE user_id = $1;
+
+-- === Team Extra Queries ===
+
+-- name: GetTeam :one
+SELECT * FROM teams WHERE id = $1;
+
+-- name: UpdateTeam :one
+UPDATE teams SET name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *;
+
+-- name: DeleteTeam :exec
+DELETE FROM teams WHERE id = $1;
+
+-- name: GetTeamMemberRole :one
+SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2;
+
+-- === Auth Extra Queries ===
+
+-- name: UpdatePassword :exec
+UPDATE users SET password_hash = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1;
+
+-- === Notification Queries ===
+
+-- name: CreateNotification :exec
+INSERT INTO notifications (tenant_id, user_id, type, title, message, data)
+VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: ListNotifications :many
+SELECT * FROM notifications
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: ListUnreadNotifications :many
+SELECT * FROM notifications
+WHERE user_id = $1 AND read_at IS NULL
+ORDER BY created_at DESC
+LIMIT $2;
+
+-- name: CountUnreadNotifications :one
+SELECT COUNT(*)::int as count FROM notifications
+WHERE user_id = $1 AND read_at IS NULL;
+
+-- name: MarkNotificationRead :exec
+UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+WHERE id = $1 AND user_id = $2;
+
+-- name: MarkAllNotificationsRead :exec
+UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+WHERE user_id = $1 AND read_at IS NULL;

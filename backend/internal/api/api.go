@@ -9,6 +9,7 @@ import (
 	"github.com/user/stellersl/backend/internal/api/auth"
 	"github.com/user/stellersl/backend/internal/api/dashboard"
 	"github.com/user/stellersl/backend/internal/api/gamification"
+	"github.com/user/stellersl/backend/internal/api/notification"
 	"github.com/user/stellersl/backend/internal/api/project"
 	"github.com/user/stellersl/backend/internal/api/task"
 	"github.com/user/stellersl/backend/internal/api/team"
@@ -45,6 +46,7 @@ func RegisterRoutes(api huma.API, conn *sql.DB) {
 	taskSvc := task.NewService(conn, queries)
 	teamSvc := team.NewService(conn, queries)
 	gamiSvc := gamification.NewService(conn, queries)
+	notifSvc := notification.NewService(conn, queries)
 
 	// 2. Register Handlers
 	auth.RegisterHandlers(api, authSvc, getTenantID, func(ctx context.Context) (auth.AuthInfo, error) {
@@ -72,5 +74,10 @@ func RegisterRoutes(api huma.API, conn *sql.DB) {
 	gamification.RegisterHandlers(api, gamiSvc, func(ctx context.Context) (gamification.AuthInfo, error) {
 		a, err := getAuth(ctx)
 		return gamification.AuthInfo{UserID: a.UserID}, err
+	})
+
+	notification.RegisterHandlers(api, notifSvc, func(ctx context.Context) (notification.AuthInfo, error) {
+		a, err := getAuth(ctx)
+		return notification.AuthInfo{TenantID: a.TenantID, UserID: a.UserID}, err
 	})
 }
