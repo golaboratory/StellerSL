@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5F3FF"/>
+      <stop offset="100%" stop-color="#DDD6FE"/>
+    </linearGradient>
+    <linearGradient id="crown" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4B5FD"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#6D28D9" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="23" fill="url(#inner)" opacity="0.9"/>
+  <!-- Crown -->
+  <path d="M16 38 L16 26 L24 32 L32 20 L40 32 L48 26 L48 38 Z" fill="url(#crown)" stroke="#6D28D9" stroke-width="1"/>
+  <!-- Crown base band -->
+  <rect x="16" y="38" width="32" height="5" rx="1" fill="#7C3AED"/>
+  <!-- Gem accents on crown points -->
+  <circle cx="32" cy="20" r="2.5" fill="#DDD6FE" stroke="#6D28D9" stroke-width="0.5"/>
+  <circle cx="16" cy="26" r="2" fill="#EDE9FE"/>
+  <circle cx="48" cy="26" r="2" fill="#EDE9FE"/>
+  <!-- Three small gems on band -->
+  <circle cx="26" cy="40.5" r="1.5" fill="#EDE9FE"/>
+  <circle cx="32" cy="40.5" r="1.5" fill="#EDE9FE"/>
+  <circle cx="38" cy="40.5" r="1.5" fill="#EDE9FE"/>
+</svg>

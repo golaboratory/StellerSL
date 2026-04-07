@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ECFDF5"/>
+      <stop offset="100%" stop-color="#A7F3D0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#047857" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="23" fill="url(#inner)" opacity="0.9"/>
+  <!-- Pencil -->
+  <rect x="24" y="16" width="6" height="28" rx="1" fill="#059669" transform="rotate(-15 27 30)"/>
+  <polygon points="24,44 27,50 30,44" fill="#059669" transform="rotate(-15 27 30)"/>
+  <rect x="24" y="16" width="6" height="4" rx="1" fill="#047857" transform="rotate(-15 27 30)"/>
+  <!-- 5 dots representing planned tasks -->
+  <circle cx="40" cy="22" r="2.5" fill="#10B981"/>
+  <circle cx="44" cy="28" r="2.5" fill="#10B981"/>
+  <circle cx="46" cy="35" r="2.5" fill="#10B981"/>
+  <circle cx="44" cy="42" r="2.5" fill="#10B981"/>
+  <circle cx="40" cy="48" r="2.5" fill="#10B981"/>
+</svg>

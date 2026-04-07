@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0FDFA"/>
+      <stop offset="100%" stop-color="#CCFBF1"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="url(#accent)" stroke-width="2.5"/>
+  <!-- Calendar page -->
+  <rect x="16" y="18" width="32" height="32" rx="3" fill="white" stroke="#14B8A6" stroke-width="1.5"/>
+  <!-- Calendar header -->
+  <rect x="16" y="18" width="32" height="9" rx="3" fill="#14B8A6"/>
+  <!-- Calendar rings -->
+  <rect x="22" y="15" width="3" height="6" rx="1" fill="#0D9488"/>
+  <rect x="39" y="15" width="3" height="6" rx="1" fill="#0D9488"/>
+  <!-- "31" represented as shapes -->
+  <rect x="22" y="32" width="3" height="10" rx="0.5" fill="#0D9488"/>
+  <rect x="22" y="32" width="6" height="2.5" rx="0.5" fill="#0D9488"/>
+  <rect x="22" y="37" width="6" height="2.5" rx="0.5" fill="#0D9488"/>
+  <rect x="25" y="39.5" width="3" height="2.5" rx="0.5" fill="#0D9488"/>
+  <rect x="33" y="32" width="3" height="10" rx="0.5" fill="#0D9488"/>
+  <!-- Star burst above calendar -->
+  <polygon points="32,8 33.5,12 37,12.5 34.5,15 35,18.5 32,16.5 29,18.5 29.5,15 27,12.5 30.5,12" fill="#FBBF24"/>
+  <!-- Firework rays -->
+  <line x1="32" y1="4" x2="32" y2="7" stroke="#14B8A6" stroke-width="1" stroke-linecap="round"/>
+  <line x1="37" y1="6" x2="36" y2="8" stroke="#14B8A6" stroke-width="1" stroke-linecap="round"/>
+  <line x1="27" y1="6" x2="28" y2="8" stroke="#14B8A6" stroke-width="1" stroke-linecap="round"/>
+</svg>

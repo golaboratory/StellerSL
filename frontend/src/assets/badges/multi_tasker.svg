@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="mt-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#DBEAFE"/>
+      <stop offset="100%" stop-color="#BFDBFE"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#3B82F6" stroke-width="2" opacity="0.4"/>
+  <!-- Background -->
+  <circle cx="32" cy="32" r="28" fill="url(#mt-bg)"/>
+  <!-- Venn diagram circles -->
+  <circle cx="26" cy="27" r="12" fill="#3B82F6" opacity="0.2" stroke="#3B82F6" stroke-width="1.5"/>
+  <circle cx="38" cy="27" r="12" fill="#3B82F6" opacity="0.2" stroke="#3B82F6" stroke-width="1.5"/>
+  <circle cx="32" cy="38" r="12" fill="#3B82F6" opacity="0.2" stroke="#3B82F6" stroke-width="1.5"/>
+  <!-- Checkmark in circle 1 -->
+  <path d="M21 26 L24 29 L30 23" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Checkmark in circle 2 -->
+  <path d="M34 26 L37 29 L43 23" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Checkmark in circle 3 -->
+  <path d="M27 40 L30 43 L36 37" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Center intersection highlight -->
+  <circle cx="32" cy="30" r="3" fill="#3B82F6" opacity="0.15"/>
+</svg>

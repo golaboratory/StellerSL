@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="an-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7F1D1D"/>
+      <stop offset="100%" stop-color="#450A0A"/>
+    </linearGradient>
+    <linearGradient id="an-bolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#EF4444" stroke-width="2" opacity="0.5"/>
+  <!-- Background -->
+  <circle cx="32" cy="32" r="28" fill="url(#an-bg)"/>
+  <!-- Central explosion glow -->
+  <circle cx="32" cy="32" r="6" fill="#EF4444" opacity="0.4"/>
+  <circle cx="32" cy="32" r="3" fill="#FBBF24" opacity="0.6"/>
+  <!-- Lightning bolts radiating from center -->
+  <!-- Top -->
+  <path d="M33 26 L30 20 L33 22 L32 14" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top-right -->
+  <path d="M36 27 L40 22 L38 25 L44 18" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Right -->
+  <path d="M38 33 L44 30 L42 33 L50 32" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-right -->
+  <path d="M36 37 L40 42 L38 39 L44 46" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom -->
+  <path d="M33 38 L30 44 L33 42 L32 50" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-left -->
+  <path d="M28 37 L24 42 L26 39 L20 46" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Left -->
+  <path d="M26 33 L20 30 L22 33 L14 32" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top-left -->
+  <path d="M28 27 L24 22 L26 25 L20 18" fill="none" stroke="url(#an-bolt)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Sparkle dots at tips -->
+  <circle cx="32" cy="13" r="1.2" fill="#FDE68A"/>
+  <circle cx="45" cy="17" r="1.2" fill="#FDE68A"/>
+  <circle cx="51" cy="32" r="1.2" fill="#FDE68A"/>
+  <circle cx="45" cy="47" r="1.2" fill="#FDE68A"/>
+  <circle cx="32" cy="51" r="1.2" fill="#FDE68A"/>
+  <circle cx="19" cy="47" r="1.2" fill="#FDE68A"/>
+  <circle cx="13" cy="32" r="1.2" fill="#FDE68A"/>
+  <circle cx="19" cy="17" r="1.2" fill="#FDE68A"/>
+</svg>

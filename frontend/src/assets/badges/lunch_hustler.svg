@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="lh-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FEE2E2"/>
+      <stop offset="100%" stop-color="#FECACA"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#EF4444" stroke-width="2" opacity="0.4"/>
+  <!-- Background -->
+  <circle cx="32" cy="32" r="28" fill="url(#lh-bg)"/>
+  <!-- Clock face -->
+  <circle cx="32" cy="30" r="16" fill="white" opacity="0.8"/>
+  <circle cx="32" cy="30" r="16" fill="none" stroke="#DC2626" stroke-width="2"/>
+  <!-- Clock tick marks -->
+  <line x1="32" y1="16" x2="32" y2="18" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="32" y1="42" x2="32" y2="44" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="18" y1="30" x2="20" y2="30" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="44" y1="30" x2="46" y2="30" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Clock hands pointing to 12 o'clock -->
+  <line x1="32" y1="30" x2="32" y2="19" stroke="#B91C1C" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="30" x2="32" y2="22" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Center dot -->
+  <circle cx="32" cy="30" r="1.5" fill="#B91C1C"/>
+  <!-- Fork silhouette (bottom left) -->
+  <g transform="translate(18, 42) rotate(-20)">
+    <line x1="0" y1="0" x2="0" y2="12" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="-2" y1="0" x2="-2" y2="4" stroke="#DC2626" stroke-width="1" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="0" y2="4" stroke="#DC2626" stroke-width="1" stroke-linecap="round"/>
+    <line x1="2" y1="0" x2="2" y2="4" stroke="#DC2626" stroke-width="1" stroke-linecap="round"/>
+  </g>
+  <!-- Knife silhouette (bottom right) -->
+  <g transform="translate(44, 42) rotate(20)">
+    <path d="M0 0 L0 12 M0 0 Q3 2 2 6 L0 6" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

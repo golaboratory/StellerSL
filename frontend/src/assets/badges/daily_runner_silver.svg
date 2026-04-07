@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <linearGradient id="medal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D6D6D6"/>
+      <stop offset="100%" stop-color="#C0C0C0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#B45309" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="23" fill="url(#medal)" opacity="0.9"/>
+  <!-- Running figure -->
+  <circle cx="32" cy="18" r="4" fill="#4A4A4A"/>
+  <path d="M28 24 L32 30 L36 24" fill="none" stroke="#4A4A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 30 L26 38" fill="none" stroke="#4A4A4A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 30 L38 38" fill="none" stroke="#4A4A4A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M36 24 L40 20" fill="none" stroke="#4A4A4A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M28 24 L23 26" fill="none" stroke="#4A4A4A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 7 dots for 7 days -->
+  <circle cx="17" cy="48" r="2" fill="#4A4A4A"/>
+  <circle cx="22" cy="48" r="2" fill="#4A4A4A"/>
+  <circle cx="27" cy="48" r="2" fill="#4A4A4A"/>
+  <circle cx="32" cy="48" r="2" fill="#4A4A4A"/>
+  <circle cx="37" cy="48" r="2" fill="#4A4A4A"/>
+  <circle cx="42" cy="48" r="2" fill="#4A4A4A"/>
+  <circle cx="47" cy="48" r="2" fill="#4A4A4A"/>
+</svg>

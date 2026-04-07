@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5F3FF"/>
+      <stop offset="100%" stop-color="#DDD6FE"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4B5FD"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#6D28D9" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="23" fill="url(#inner)" opacity="0.9"/>
+  <!-- Laurel wreath left -->
+  <path d="M18 44 C16 38 14 32 16 26 C18 30 20 28 20 32 C20 28 22 26 22 30 C22 26 24 24 24 28 C24 24 26 22 26 26" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Laurel wreath right -->
+  <path d="M46 44 C48 38 50 32 48 26 C46 30 44 28 44 32 C44 28 42 26 42 30 C42 26 40 24 40 28 C40 24 38 22 38 26" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Shield center -->
+  <path d="M32 16 L42 22 L42 34 C42 42 32 48 32 48 C32 48 22 42 22 34 L22 22 Z" fill="url(#shield)" stroke="#6D28D9" stroke-width="1"/>
+  <!-- Shield inner highlight -->
+  <path d="M32 20 L38 24 L38 33 C38 38 32 43 32 43 C32 43 26 38 26 33 L26 24 Z" fill="#DDD6FE" opacity="0.5"/>
+  <!-- Star on shield -->
+  <polygon points="32,24 34,29 39,29.5 35.5,33 36.5,38 32,35.5 27.5,38 28.5,33 25,29.5 30,29" fill="#7C3AED"/>
+</svg>

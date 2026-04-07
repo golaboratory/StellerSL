@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <linearGradient id="medal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0EFED"/>
+      <stop offset="100%" stop-color="#E5E4E2"/>
+    </linearGradient>
+    <linearGradient id="diamond" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="50%" stop-color="#B8E6F0"/>
+      <stop offset="100%" stop-color="#E5E4E2"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#B45309" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="23" fill="url(#medal)" opacity="0.95"/>
+  <!-- Running figure -->
+  <circle cx="32" cy="22" r="4" fill="#6B6B6B"/>
+  <path d="M28 28 L32 34 L36 28" fill="none" stroke="#6B6B6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 34 L26 42" fill="none" stroke="#6B6B6B" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 34 L38 42" fill="none" stroke="#6B6B6B" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M36 28 L40 24" fill="none" stroke="#6B6B6B" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M28 28 L23 30" fill="none" stroke="#6B6B6B" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Diamond sparkle -->
+  <polygon points="44,10 47,16 44,22 41,16" fill="url(#diamond)" stroke="#9CA3AF" stroke-width="0.5"/>
+  <line x1="39" y1="16" x2="49" y2="16" stroke="#B8E6F0" stroke-width="0.8" stroke-linecap="round"/>
+  <circle cx="18" cy="14" r="1.2" fill="#B8E6F0"/>
+  <circle cx="22" cy="10" r="0.8" fill="#B8E6F0"/>
+</svg>

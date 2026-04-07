@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="lf-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FEF3C7"/>
+      <stop offset="100%" stop-color="#FCA5A5"/>
+    </linearGradient>
+    <linearGradient id="lf-bolt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#EF4444" stroke-width="2" opacity="0.4"/>
+  <!-- Background -->
+  <circle cx="32" cy="32" r="28" fill="url(#lf-bg)"/>
+  <!-- Speed lines (left side) -->
+  <line x1="8" y1="24" x2="18" y2="24" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="6" y1="30" x2="16" y2="30" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="7" y1="36" x2="17" y2="36" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="9" y1="42" x2="17" y2="42" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  <!-- Speed lines (short, scattered) -->
+  <line x1="10" y1="18" x2="15" y2="18" stroke="#EF4444" stroke-width="1" stroke-linecap="round" opacity="0.3"/>
+  <line x1="11" y1="47" x2="16" y2="47" stroke="#EF4444" stroke-width="1" stroke-linecap="round" opacity="0.3"/>
+  <!-- Main lightning bolt -->
+  <path d="M38 8 L24 32 L32 32 L22 56 L46 28 L36 28 L44 8Z" fill="url(#lf-bolt)" stroke="#B45309" stroke-width="0.8" stroke-linejoin="round"/>
+  <!-- Highlight on bolt -->
+  <path d="M40 12 L30 28 L34 28 L38 12Z" fill="white" opacity="0.3"/>
+</svg>
