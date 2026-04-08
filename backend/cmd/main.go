@@ -61,14 +61,17 @@ func main() {
 			if tenantHost := r.Header.Get("X-Tenant-Host"); tenantHost != "" {
 				host = tenantHost
 			}
+			fmt.Println("host", host)
 			tenant, err := queries.GetTenantByDomain(r.Context(), host)
-			
+
 			// For local development on localhost, fallback to default tenant if not found
 			tenantID := "00000000-0000-0000-0000-000000000001"
 			if err == nil {
 				tenantID = tenant.ID.String()
 			}
-			
+
+			fmt.Println("tenantID", tenantID)
+
 			ctx := context.WithValue(r.Context(), "tenant_id", tenantID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

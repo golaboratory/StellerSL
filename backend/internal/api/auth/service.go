@@ -64,6 +64,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) error {
 
 func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) (*LoginOutput, error) {
 	var user db.User
+	fmt.Println("tenantID", tenantID)
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
 		user, err = q.GetUserByEmail(ctx, input.Body.Email)

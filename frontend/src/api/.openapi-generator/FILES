@@ -13,6 +13,7 @@ docs/BulkTaskCreateInputBody.md
 docs/BulkTaskCreateItem.md
 docs/BulkTaskDeleteInputBody.md
 docs/BulkTaskUpdateInputBody.md
+docs/ChangePasswordInputBody.md
 docs/DailyActivityItem.md
 docs/DashboardOutputBody.md
 docs/DefaultApi.md
@@ -21,6 +22,9 @@ docs/ErrorModel.md
 docs/GrowthOutputBody.md
 docs/LoginInputBody.md
 docs/LoginOutputBody.md
+docs/MeOutputBody.md
+docs/NotificationItem.md
+docs/NotificationListOutputBody.md
 docs/ProjectInput.md
 docs/ProjectInputBody.md
 docs/ProjectInputBodyStruct.md
@@ -31,6 +35,7 @@ docs/ProjectTaskListOutputBody.md
 docs/ProjectUserAssignmentInputBody.md
 docs/RecentActivityItem.md
 docs/RegisterInputBody.md
+docs/ResetPasswordInputBody.md
 docs/TaskInputBody.md
 docs/TaskItem.md
 docs/TaskListOutputBody.md
@@ -42,8 +47,10 @@ docs/TeamListOutputBody.md
 docs/TeamMemberInputBody.md
 docs/TeamMemberListOutputBody.md
 docs/TeamMemberUser.md
+docs/UnreadCountOutputBody.md
 docs/UpdateProfileInputBody.md
 docs/UpdateTaskRequest.md
+docs/UpdateTeamRequest.md
 docs/UserStruct.md
 git_push.sh
 index.ts

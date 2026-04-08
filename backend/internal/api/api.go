@@ -73,7 +73,7 @@ func RegisterRoutes(api huma.API, conn *sql.DB) {
 
 	gamification.RegisterHandlers(api, gamiSvc, func(ctx context.Context) (gamification.AuthInfo, error) {
 		a, err := getAuth(ctx)
-		return gamification.AuthInfo{UserID: a.UserID}, err
+		return gamification.AuthInfo{TenantID: a.TenantID, UserID: a.UserID}, err
 	})
 
 	notification.RegisterHandlers(api, notifSvc, func(ctx context.Context) (notification.AuthInfo, error) {

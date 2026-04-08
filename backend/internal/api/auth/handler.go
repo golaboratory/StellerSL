@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -33,7 +34,10 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 		Summary:     "User Login",
 	}, func(ctx context.Context, input *LoginInput) (*LoginOutput, error) {
 		tenantID := getTenantID(ctx)
+		fmt.Println("tenantID", tenantID)
 		resp, err := service.Login(ctx, *input, tenantID)
+		fmt.Println("resp", resp)
+		fmt.Println("err", err)
 		if err != nil {
 			return nil, huma.Error401Unauthorized("Invalid credentials")
 		}

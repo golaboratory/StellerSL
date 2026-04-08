@@ -32,11 +32,13 @@ const handleSignup = async () => {
   
   try {
     await api.register({
-      tenant_id: "00000000-0000-0000-0000-000000000001", // Default tenant for POC
-      email: email.value,
-      password: password.value,
-      name: name.value,
-      invite_team_id: inviteTeamID.value || undefined
+      registerInputBody: {
+        tenant_id: "00000000-0000-0000-0000-000000000001", // Default tenant for POC
+        email: email.value,
+        password: password.value,
+        name: name.value,
+        invite_team_id: inviteTeamID.value || undefined,
+      },
     });
     router.push('/login');
   } catch (err: any) {
