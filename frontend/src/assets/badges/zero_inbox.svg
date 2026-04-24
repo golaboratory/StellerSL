@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="zi-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#DBEAFE"/>
+      <stop offset="100%" stop-color="#BFDBFE"/>
+    </linearGradient>
+    <linearGradient id="zi-tray" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#3B82F6" stroke-width="2" opacity="0.4"/>
+  <!-- Background -->
+  <circle cx="32" cy="32" r="28" fill="url(#zi-bg)"/>
+  <!-- Inbox/tray - back wall -->
+  <path d="M14 24 L14 46 L50 46 L50 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Inbox shelf -->
+  <path d="M14 36 L22 36 L26 42 L38 42 L42 36 L50 36" fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Tray bottom fill -->
+  <path d="M15 36 L22 36 L26 42 L38 42 L42 36 L49 36 L49 45 L15 45Z" fill="url(#zi-tray)" opacity="0.3"/>
+  <!-- Empty tray highlight -->
+  <path d="M27 43 L37 43" stroke="white" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+  <!-- Sparkle top-right -->
+  <g transform="translate(42, 18)">
+    <line x1="0" y1="-4" x2="0" y2="4" stroke="#FBBF24" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="-4" y1="0" x2="4" y2="0" stroke="#FBBF24" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="-2.5" y1="-2.5" x2="2.5" y2="2.5" stroke="#FBBF24" stroke-width="1" stroke-linecap="round"/>
+    <line x1="2.5" y1="-2.5" x2="-2.5" y2="2.5" stroke="#FBBF24" stroke-width="1" stroke-linecap="round"/>
+  </g>
+  <!-- Sparkle top-left -->
+  <g transform="translate(20, 20)">
+    <line x1="0" y1="-3" x2="0" y2="3" stroke="#FBBF24" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+    <line x1="-3" y1="0" x2="3" y2="0" stroke="#FBBF24" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+  </g>
+  <!-- Small sparkle -->
+  <g transform="translate(34, 28)">
+    <line x1="0" y1="-2" x2="0" y2="2" stroke="#FBBF24" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+    <line x1="-2" y1="0" x2="2" y2="0" stroke="#FBBF24" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+  </g>
+</svg>

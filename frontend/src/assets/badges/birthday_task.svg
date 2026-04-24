@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0FDFA"/>
+      <stop offset="100%" stop-color="#CCFBF1"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="url(#accent)" stroke-width="2.5"/>
+  <!-- Heart shape outline -->
+  <path d="M32 50 C20 42 10 34 10 24 C10 18 16 14 22 14 C26 14 30 17 32 20 C34 17 38 14 42 14 C48 14 54 18 54 24 C54 34 44 42 32 50Z" fill="none" stroke="#F9A8D4" stroke-width="1.5" opacity="0.5"/>
+  <!-- Cake base -->
+  <rect x="20" y="36" width="24" height="12" rx="3" fill="#14B8A6"/>
+  <!-- Cake frosting -->
+  <path d="M20 36 Q24 32 28 36 Q32 32 36 36 Q40 32 44 36" fill="#5EEAD4"/>
+  <!-- Cake bottom layer -->
+  <rect x="22" y="42" width="20" height="6" rx="2" fill="#0D9488"/>
+  <!-- Candle -->
+  <rect x="30" y="26" width="4" height="10" rx="1" fill="#F9A8D4"/>
+  <!-- Flame -->
+  <ellipse cx="32" cy="23" rx="2.5" ry="4" fill="#FBBF24"/>
+  <ellipse cx="32" cy="23.5" rx="1.2" ry="2.5" fill="#FEF3C7"/>
+  <!-- Small hearts -->
+  <path d="M14 20 C14 18 16 17 17 18.5 C18 17 20 18 20 20 C20 22 17 24 17 24 C17 24 14 22 14 20Z" fill="#F9A8D4" opacity="0.6"/>
+  <path d="M46 18 C46 16.5 47.5 16 48 17 C48.5 16 50 16.5 50 18 C50 19.5 48 21 48 21 C48 21 46 19.5 46 18Z" fill="#F9A8D4" opacity="0.6"/>
+</svg>

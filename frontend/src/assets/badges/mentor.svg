@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDF2F8"/>
+      <stop offset="100%" stop-color="#FCE7F3"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F472B6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="url(#accent)" stroke-width="2.5"/>
+  <!-- Larger mentor person -->
+  <circle cx="26" cy="26" r="6" fill="#DB2777"/>
+  <path d="M16 44 Q16 34 26 34 Q36 34 36 44" fill="#DB2777"/>
+  <!-- Speech bubble -->
+  <path d="M36 14 Q36 10 42 10 L50 10 Q54 10 54 14 L54 22 Q54 26 50 26 L42 26 L38 30 L39 26 Q36 26 36 22 Z" fill="#EC4899"/>
+  <!-- Star inside bubble -->
+  <polygon points="45,14 46.5,17.5 50,18 47.5,20.5 48,24 45,22 42,24 42.5,20.5 40,18 43.5,17.5" fill="white"/>
+</svg>

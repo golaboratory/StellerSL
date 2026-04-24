@@ -46,3 +46,26 @@ type AvatarUploadOutput struct {
 		Url string `json:"url"`
 	}
 }
+
+type MeOutput struct {
+	Body struct {
+		ID        string `json:"id"`
+		Email     string `json:"email"`
+		Name      string `json:"name"`
+		AvatarUrl string `json:"avatar_url"`
+	}
+}
+
+type ChangePasswordInput struct {
+	Body struct {
+		CurrentPassword string `json:"current_password" minLength:"8"`
+		NewPassword     string `json:"new_password" minLength:"8"`
+	}
+}
+
+type ResetPasswordInput struct {
+	Body struct {
+		UserID      string `json:"user_id"`
+		NewPassword string `json:"new_password" minLength:"8"`
+	}
+}

@@ -9,15 +9,22 @@ All URIs are relative to *http://localhost*
 |[**bulkCreateTasks**](#bulkcreatetasks) | **POST** /tasks/bulk | Bulk Create Tasks|
 |[**bulkDeleteTasks**](#bulkdeletetasks) | **DELETE** /tasks/bulk | Bulk Delete Tasks|
 |[**bulkUpdateTasksStatus**](#bulkupdatetasksstatus) | **PATCH** /tasks/bulk/status | Bulk Update Tasks Status|
+|[**changePassword**](#changepassword) | **PUT** /auth/password | Change Password|
+|[**countUnreadNotifications**](#countunreadnotifications) | **GET** /notifications/unread/count | Count Unread Notifications|
 |[**createProject**](#createproject) | **POST** /projects | Create Project|
 |[**createTask**](#createtask) | **POST** /tasks | Create Task|
 |[**createTeam**](#createteam) | **POST** /teams | Create Team|
 |[**deleteProject**](#deleteproject) | **DELETE** /projects/{id} | Delete Project|
 |[**deleteTask**](#deletetask) | **DELETE** /tasks/{id} | Delete Task|
+|[**deleteTeam**](#deleteteam) | **DELETE** /teams/{id} | Delete Team|
 |[**getDashboardStats**](#getdashboardstats) | **GET** /dashboard | Dashboard Stats|
+|[**getMe**](#getme) | **GET** /auth/me | Get Current User|
 |[**getProject**](#getproject) | **GET** /projects/{id} | Get Project|
+|[**getTask**](#gettask) | **GET** /tasks/{id} | Get Task|
+|[**getTeam**](#getteam) | **GET** /teams/{id} | Get Team|
 |[**getUserGrowth**](#getusergrowth) | **GET** /growth | User Growth|
 |[**listBadges**](#listbadges) | **GET** /badges | User Badges|
+|[**listNotifications**](#listnotifications) | **GET** /notifications | List Notifications|
 |[**listProjectTasks**](#listprojecttasks) | **GET** /projects/{id}/tasks | List Project Tasks|
 |[**listProjectUsers**](#listprojectusers) | **GET** /projects/{id}/users | List Project Users|
 |[**listProjects**](#listprojects) | **GET** /projects | List Projects|
@@ -25,14 +32,18 @@ All URIs are relative to *http://localhost*
 |[**listTeamMembers**](#listteammembers) | **GET** /teams/{id}/members | List Team Members|
 |[**listTeams**](#listteams) | **GET** /teams | List Teams|
 |[**login**](#login) | **POST** /auth/login | User Login|
+|[**markAllNotificationsRead**](#markallnotificationsread) | **PATCH** /notifications/read-all | Mark All Notifications Read|
+|[**markNotificationRead**](#marknotificationread) | **PATCH** /notifications/{id}/read | Mark Notification Read|
 |[**register**](#register) | **POST** /auth/register | User Registration|
 |[**removeTeamMember**](#removeteammember) | **DELETE** /teams/{id}/members/{user_id} | Remove Team Member|
+|[**resetPassword**](#resetpassword) | **POST** /auth/reset-password | Reset Password (Admin)|
 |[**searchUsers**](#searchusers) | **GET** /users/search | Search Users|
 |[**unassignProjectUser**](#unassignprojectuser) | **DELETE** /projects/{id}/users/{user_id} | Unassign User from Project|
 |[**updateProfile**](#updateprofile) | **PUT** /auth/profile | Update User Profile|
 |[**updateProject**](#updateproject) | **PUT** /projects/{id} | Update Project|
 |[**updateTask**](#updatetask) | **PUT** /tasks/{id} | Update Task|
 |[**updateTaskStatus**](#updatetaskstatus) | **PATCH** /tasks/{id}/status | Update Task Status|
+|[**updateTeam**](#updateteam) | **PUT** /teams/{id} | Update Team|
 |[**uploadAvatar**](#uploadavatar) | **POST** /auth/avatar | Upload Avatar Image|
 
 # **addTeamMember**
@@ -301,6 +312,102 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **changePassword**
+> changePassword(changePasswordInputBody)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ChangePasswordInputBody
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let changePasswordInputBody: ChangePasswordInputBody; //
+
+const { status, data } = await apiInstance.changePassword(
+    changePasswordInputBody
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **changePasswordInputBody** | **ChangePasswordInputBody**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **countUnreadNotifications**
+> UnreadCountOutputBody countUnreadNotifications()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.countUnreadNotifications();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**UnreadCountOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **createProject**
 > ProjectOutputBody createProject(projectInputBody)
 
@@ -559,6 +666,57 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **deleteTeam**
+> deleteTeam()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.deleteTeam(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **getDashboardStats**
 > DashboardOutputBody getDashboardStats()
 
@@ -584,6 +742,50 @@ This endpoint does not have any parameters.
 ### Return type
 
 **DashboardOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getMe**
+> MeOutputBody getMe()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.getMe();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**MeOutputBody**
 
 ### Authorization
 
@@ -650,6 +852,108 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getTask**
+> TaskOutputBody getTask()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.getTask(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**TaskOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getTeam**
+> getTeam()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.getTeam(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  * ID -  <br>  * Name -  <br>  |
 |**0** | Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -723,6 +1027,60 @@ This endpoint does not have any parameters.
 ### Return type
 
 **BadgeListOutputBody**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **listNotifications**
+> NotificationListOutputBody listNotifications()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let limit: number; // (optional) (default to 50)
+let offset: number; // (optional) (default to 0)
+
+const { status, data } = await apiInstance.listNotifications(
+    limit,
+    offset
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **limit** | [**number**] |  | (optional) defaults to 50|
+| **offset** | [**number**] |  | (optional) defaults to 0|
+
+
+### Return type
+
+**NotificationListOutputBody**
 
 ### Authorization
 
@@ -1109,6 +1467,101 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **markAllNotificationsRead**
+> markAllNotificationsRead()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+const { status, data } = await apiInstance.markAllNotificationsRead();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **markNotificationRead**
+> markNotificationRead()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+
+const { status, data } = await apiInstance.markNotificationRead(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **register**
 > register(registerInputBody)
 
@@ -1204,6 +1657,58 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **resetPassword**
+> resetPassword(resetPasswordInputBody)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    ResetPasswordInputBody
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let resetPasswordInputBody: ResetPasswordInputBody; //
+
+const { status, data } = await apiInstance.resetPassword(
+    resetPasswordInputBody
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **resetPasswordInputBody** | **ResetPasswordInputBody**|  | |
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
  - **Accept**: application/problem+json
 
 
@@ -1533,6 +2038,61 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | OK |  -  |
+|**0** | Error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **updateTeam**
+> updateTeam(updateTeamRequest)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    UpdateTeamRequest
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let id: string; // (default to undefined)
+let updateTeamRequest: UpdateTeamRequest; //
+
+const { status, data } = await apiInstance.updateTeam(
+    id,
+    updateTeamRequest
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **updateTeamRequest** | **UpdateTeamRequest**|  | |
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/problem+json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**204** | No Content |  * ID -  <br>  * Name -  <br>  |
 |**0** | Error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

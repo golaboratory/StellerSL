@@ -64,6 +64,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) error {
 
 func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) (*LoginOutput, error) {
 	var user db.User
+	fmt.Println("tenantID", tenantID)
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
 		user, err = q.GetUserByEmail(ctx, input.Body.Email)
@@ -73,12 +74,8 @@ func (s *Service) Login(ctx context.Context, input LoginInput, tenantID string) 
 		return nil, err
 	}
 
-	if strings.HasPrefix(user.PasswordHash, "$2a$") {
-		if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Body.Password)); err != nil {
-			return nil, err
-		}
-	} else if user.PasswordHash != input.Body.Password {
-		return nil, err
+	if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Body.Password)); err != nil {
+		return nil, fmt.Errorf("invalid credentials")
 	}
 
 	claims := &AuthClaims{
@@ -108,6 +105,57 @@ func (s *Service) UpdateProfile(ctx context.Context, tenantID, userID string, in
 			AvatarUrl: sql.NullString{String: input.Body.AvatarUrl, Valid: input.Body.AvatarUrl != ""},
 		})
 		return err
+	})
+}
+
+func (s *Service) GetMe(ctx context.Context, tenantID, userID string) (*MeOutput, error) {
+	var user db.User
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		user, err = q.GetUserByID(ctx, db.ParseUUID(userID))
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	resp := &MeOutput{}
+	resp.Body.ID = user.ID.String()
+	resp.Body.Email = user.Email
+	resp.Body.Name = user.Name
+	resp.Body.AvatarUrl = user.AvatarUrl.String
+	return resp, nil
+}
+
+func (s *Service) ChangePassword(ctx context.Context, tenantID, userID string, input ChangePasswordInput) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		user, err := q.GetUserByID(ctx, db.ParseUUID(userID))
+		if err != nil {
+			return err
+		}
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Body.CurrentPassword)); err != nil {
+			return fmt.Errorf("current password is incorrect")
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.Body.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		return q.UpdatePassword(ctx, db.UpdatePasswordParams{
+			ID:           db.ParseUUID(userID),
+			PasswordHash: string(hash),
+		})
+	})
+}
+
+func (s *Service) ResetPassword(ctx context.Context, tenantID string, input ResetPasswordInput) error {
+	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.Body.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		return q.UpdatePassword(ctx, db.UpdatePasswordParams{
+			ID:           db.ParseUUID(input.Body.UserID),
+			PasswordHash: string(hash),
+		})
 	})
 }
 

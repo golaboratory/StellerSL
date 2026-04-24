@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDF2F8"/>
+      <stop offset="100%" stop-color="#FCE7F3"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F472B6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="url(#accent)" stroke-width="2.5"/>
+  <!-- Left bar (2nd place) -->
+  <rect x="14" y="30" width="10" height="18" rx="2" fill="#F9A8D4"/>
+  <!-- Center bar (1st place, tallest) -->
+  <rect x="27" y="22" width="10" height="26" rx="2" fill="#EC4899"/>
+  <!-- Right bar (3rd place) -->
+  <rect x="40" y="34" width="10" height="14" rx="2" fill="#F9A8D4"/>
+  <!-- Crown on top of center bar -->
+  <polygon points="28,22 30,17 32,20 34,17 36,22" fill="#F59E0B" stroke="#D97706" stroke-width="0.5"/>
+  <!-- Crown jewels -->
+  <circle cx="30" cy="18.5" r="0.8" fill="#FCD34D"/>
+  <circle cx="32" cy="20.5" r="0.8" fill="#FCD34D"/>
+  <circle cx="34" cy="18.5" r="0.8" fill="#FCD34D"/>
+</svg>

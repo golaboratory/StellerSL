@@ -104,6 +104,29 @@ CREATE TABLE activity_logs (
     logged_at DATE DEFAULT CURRENT_DATE
 );
 
+-- 10. User Streaks (For tracking consecutive activity)
+CREATE TABLE user_streaks (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    streak_type TEXT NOT NULL, -- 'daily_task_completion'
+    current_count INTEGER NOT NULL DEFAULT 0,
+    max_count INTEGER NOT NULL DEFAULT 0,
+    last_date DATE,
+    PRIMARY KEY (user_id, streak_type)
+);
+
+-- 11. Notifications (In-app notification center)
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL, -- 'badge_earned', 'level_up', 'team_invite', 'task_assigned'
+    title TEXT NOT NULL,
+    message TEXT,
+    data JSONB,
+    read_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Multi-tenancy & Performance Indexes
 CREATE INDEX idx_users_tenant_id ON users(tenant_id);
 CREATE INDEX idx_teams_tenant_id ON teams(tenant_id);
@@ -111,3 +134,5 @@ CREATE INDEX idx_projects_tenant_id ON projects(tenant_id);
 CREATE INDEX idx_tasks_tenant_id ON tasks(tenant_id);
 CREATE INDEX idx_tasks_project_id ON tasks(project_id);
 CREATE INDEX idx_activity_logs_lookup ON activity_logs(tenant_id, user_id, logged_at);
+CREATE INDEX idx_notifications_user ON notifications(user_id, read_at);
+CREATE INDEX idx_notifications_tenant ON notifications(tenant_id);

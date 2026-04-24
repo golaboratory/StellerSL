@@ -6,6 +6,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -17,6 +18,14 @@ type Querier interface {
 	AwardBadge(ctx context.Context, arg AwardBadgeParams) error
 	BulkDeleteTasks(ctx context.Context, dollar_1 []uuid.UUID) error
 	BulkUpdateTasksStatus(ctx context.Context, arg BulkUpdateTasksStatusParams) error
+	CountDistinctProjectsCompletedToday(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountProjectsByUser(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountTasksCompletedOnWeekends(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountTasksCompletedToday(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountTasksCreatedToday(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountUnreadNotifications(ctx context.Context, userID uuid.UUID) (int32, error)
+	// === Notification Queries ===
+	CreateNotification(ctx context.Context, arg CreateNotificationParams) error
 	CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error)
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error)
 	CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error)
@@ -24,30 +33,51 @@ type Querier interface {
 	CreateUserGrowth(ctx context.Context, userID uuid.UUID) error
 	DeleteProject(ctx context.Context, id uuid.UUID) error
 	DeleteTask(ctx context.Context, id uuid.UUID) error
+	DeleteTeam(ctx context.Context, id uuid.UUID) error
 	GetDailyActivity(ctx context.Context, userID uuid.UUID) ([]GetDailyActivityRow, error)
 	GetDashboardStats(ctx context.Context, assignedTo uuid.NullUUID) (GetDashboardStatsRow, error)
+	GetLastActivityDate(ctx context.Context, userID uuid.UUID) (time.Time, error)
 	GetProject(ctx context.Context, id uuid.UUID) (Project, error)
 	GetRecentActivity(ctx context.Context, userID uuid.UUID) ([]GetRecentActivityRow, error)
+	// === Streak Queries ===
+	GetStreak(ctx context.Context, arg GetStreakParams) (UserStreak, error)
 	GetTask(ctx context.Context, id uuid.UUID) (Task, error)
+	// === Team Extra Queries ===
+	GetTeam(ctx context.Context, id uuid.UUID) (Team, error)
+	GetTeamMemberRole(ctx context.Context, arg GetTeamMemberRoleParams) (string, error)
 	GetTenantByDomain(ctx context.Context, domain string) (Tenant, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserGrowth(ctx context.Context, userID uuid.UUID) (UserGrowth, error)
+	// === Activity Log Queries ===
+	InsertActivityLog(ctx context.Context, arg InsertActivityLogParams) error
 	ListAllBadges(ctx context.Context) ([]Badge, error)
+	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]Notification, error)
 	ListProjectMembers(ctx context.Context, projectID uuid.UUID) ([]User, error)
 	ListProjects(ctx context.Context, arg ListProjectsParams) ([]Project, error)
 	ListTasks(ctx context.Context, arg ListTasksParams) ([]Task, error)
 	ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error)
 	ListTeams(ctx context.Context, arg ListTeamsParams) ([]Team, error)
+	ListUnreadNotifications(ctx context.Context, arg ListUnreadNotificationsParams) ([]Notification, error)
 	ListUserBadges(ctx context.Context, userID uuid.UUID) ([]Badge, error)
+	MarkAllNotificationsRead(ctx context.Context, userID uuid.UUID) error
+	MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) error
+	RemoveBadge(ctx context.Context, arg RemoveBadgeParams) error
 	RemoveTeamMember(ctx context.Context, arg RemoveTeamMemberParams) error
 	SearchUsers(ctx context.Context, arg SearchUsersParams) ([]User, error)
+	// === Gamification Extra Queries ===
+	SubtractExp(ctx context.Context, arg SubtractExpParams) error
 	UnassignProjectUser(ctx context.Context, arg UnassignProjectUserParams) error
+	UpdateCharacterType(ctx context.Context, arg UpdateCharacterTypeParams) error
 	UpdateLevel(ctx context.Context, userID uuid.UUID) error
+	// === Auth Extra Queries ===
+	UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error
 	UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error)
 	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error)
 	UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) (Task, error)
+	UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpsertStreak(ctx context.Context, arg UpsertStreakParams) error
 }
 
 var _ Querier = (*Queries)(nil)

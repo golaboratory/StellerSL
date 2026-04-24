@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import axiosInstance from '../api/axios';
+import { DefaultApi } from '../api';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
@@ -10,6 +12,7 @@ import Card from 'primevue/card';
 
 const router = useRouter();
 const auth = useAuthStore();
+const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const email = ref('test@example.com');
 const password = ref('password123');
@@ -19,23 +22,15 @@ const loading = ref(false);
 const handleLogin = async () => {
   loading.value = true;
   error.value = '';
-  
+
   try {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: { email: email.value, password: password.value } }),
+    const { data } = await api.login({
+      loginInputBody: { email: email.value, password: password.value },
     });
-
-    if (!response.ok) {
-      throw new Error('Invalid credentials');
-    }
-
-    const data = await response.json();
     auth.setAuth(data.token, data.user);
     router.push('/dashboard');
   } catch (err: any) {
-    error.value = err.message;
+    error.value = 'Invalid credentials';
   } finally {
     loading.value = false;
   }

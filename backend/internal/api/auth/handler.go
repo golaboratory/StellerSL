@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -33,11 +34,60 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 		Summary:     "User Login",
 	}, func(ctx context.Context, input *LoginInput) (*LoginOutput, error) {
 		tenantID := getTenantID(ctx)
+		fmt.Println("tenantID", tenantID)
 		resp, err := service.Login(ctx, *input, tenantID)
+		fmt.Println("resp", resp)
+		fmt.Println("err", err)
 		if err != nil {
 			return nil, huma.Error401Unauthorized("Invalid credentials")
 		}
 		return resp, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-me",
+		Method:      http.MethodGet,
+		Path:        "/auth/me",
+		Summary:     "Get Current User",
+	}, func(ctx context.Context, input *struct{}) (*MeOutput, error) {
+		auth, err := getAuth(ctx)
+		if err != nil {
+			return nil, huma.Error401Unauthorized("Unauthorized")
+		}
+		return service.GetMe(ctx, auth.TenantID, auth.UserID)
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "change-password",
+		Method:      http.MethodPut,
+		Path:        "/auth/password",
+		Summary:     "Change Password",
+	}, func(ctx context.Context, input *ChangePasswordInput) (*struct{}, error) {
+		auth, err := getAuth(ctx)
+		if err != nil {
+			return nil, huma.Error401Unauthorized("Unauthorized")
+		}
+		if err := service.ChangePassword(ctx, auth.TenantID, auth.UserID, *input); err != nil {
+			return nil, huma.Error400BadRequest(err.Error())
+		}
+		return nil, nil
+	})
+
+	huma.Register(api, huma.Operation{
+		OperationID: "reset-password",
+		Method:      http.MethodPost,
+		Path:        "/auth/reset-password",
+		Summary:     "Reset Password (Admin)",
+	}, func(ctx context.Context, input *ResetPasswordInput) (*struct{}, error) {
+		auth, err := getAuth(ctx)
+		if err != nil {
+			return nil, huma.Error401Unauthorized("Unauthorized")
+		}
+		if err := service.ResetPassword(ctx, auth.TenantID, *input); err != nil {
+			return nil, huma.Error500InternalServerError("Failed to reset password")
+		}
+		_ = auth // TODO: add admin role check in future
+		return nil, nil
 	})
 
 	huma.Register(api, huma.Operation{

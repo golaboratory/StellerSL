@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { DefaultApi, Configuration } from '../api';
+import axiosInstance from '../api/axios';
+import { DefaultApi } from '../api';
 import Gantt from 'frappe-gantt';
 import Toolbar from 'primevue/toolbar';
 import Button from 'primevue/button';
 
-const auth = useAuthStore();
-const api = new DefaultApi(new Configuration({ basePath: '/api', accessToken: auth.token || undefined }));
+const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const tasks = ref<any[]>([]);
 const ganttChart = ref<any>(null);

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FDF2F8"/>
+      <stop offset="100%" stop-color="#FCE7F3"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F472B6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="url(#accent)" stroke-width="2.5"/>
+  <!-- Left person -->
+  <circle cx="20" cy="24" r="4" fill="#EC4899"/>
+  <path d="M13 38 Q13 31 20 31 Q27 31 27 38" fill="#EC4899" opacity="0.8"/>
+  <!-- Center person -->
+  <circle cx="32" cy="22" r="4.5" fill="#DB2777"/>
+  <path d="M24 37 Q24 29 32 29 Q40 29 40 37" fill="#DB2777"/>
+  <!-- Right person -->
+  <circle cx="44" cy="24" r="4" fill="#EC4899"/>
+  <path d="M37 38 Q37 31 44 31 Q51 31 51 38" fill="#EC4899" opacity="0.8"/>
+  <!-- Plus symbol -->
+  <circle cx="48" cy="18" r="6" fill="#F9A8D4"/>
+  <rect x="46" y="15" width="4" height="6" rx="1" fill="white"/>
+  <rect x="45" y="16" width="6" height="4" rx="1" fill="white"/>
+</svg>
