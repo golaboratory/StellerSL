@@ -1,0 +1,8 @@
+# Build-script approvals (pnpm 10+ blocks dependency postinstall scripts).
+# Mirrors the "pnpm" section in package.json so that pnpm 11+, which reads
+# settings from this file only, behaves the same as pnpm 10.
+onlyBuiltDependencies:
+  - esbuild
+ignoredBuiltDependencies:
+  - "@nestjs/core"
+  - "@openapitools/openapi-generator-cli"

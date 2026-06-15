@@ -12,12 +12,13 @@ import (
 )
 
 type ActivityLog struct {
-	ID       int64         `json:"id"`
-	TenantID uuid.UUID     `json:"tenant_id"`
-	UserID   uuid.UUID     `json:"user_id"`
-	TaskID   uuid.NullUUID `json:"task_id"`
-	Action   string        `json:"action"`
-	LoggedAt sql.NullTime  `json:"logged_at"`
+	ID        int64         `json:"id"`
+	TenantID  uuid.UUID     `json:"tenant_id"`
+	UserID    uuid.UUID     `json:"user_id"`
+	TaskID    uuid.NullUUID `json:"task_id"`
+	Action    string        `json:"action"`
+	LoggedAt  sql.NullTime  `json:"logged_at"`
+	CreatedAt sql.NullTime  `json:"created_at"`
 }
 
 type Badge struct {
@@ -98,6 +99,7 @@ type User struct {
 	PasswordHash string         `json:"password_hash"`
 	Name         string         `json:"name"`
 	AvatarUrl    sql.NullString `json:"avatar_url"`
+	IsAdmin      bool           `json:"is_admin"`
 	CreatedAt    sql.NullTime   `json:"created_at"`
 	UpdatedAt    sql.NullTime   `json:"updated_at"`
 }

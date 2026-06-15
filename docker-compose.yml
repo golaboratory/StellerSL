@@ -7,7 +7,9 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: stellersl
     ports:
-      - "5432:5432"
+      # Host port for external tools (psql etc.). Override when 5432 is taken
+      # by another project: DB_PORT=15432 docker-compose up
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./_initdb:/docker-entrypoint-initdb.d
@@ -34,6 +36,10 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
+    environment:
+      # The Vite dev proxy must target the backend service, not the
+      # frontend container's own localhost
+      - VITE_BACKEND_URL=http://backend:8888
     depends_on:
       - backend
 

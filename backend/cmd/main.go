@@ -84,6 +84,7 @@ func main() {
 			path := r.URL.Path
 			if path == "/auth/login" || path == "/auth/register" ||
 				path == "/openapi.json" || path == "/docs" ||
+				strings.HasPrefix(path, "/schemas/") || // JSON Schema refs used by /docs and error bodies
 				strings.HasPrefix(path, "/uploads/") ||
 				r.Method == "OPTIONS" {
 				next.ServeHTTP(w, r)

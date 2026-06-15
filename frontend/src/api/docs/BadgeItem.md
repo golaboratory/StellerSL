@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **icon_slug** | **string** |  | [default to undefined]
 **id** | **string** |  | [default to undefined]
 **name** | **string** |  | [default to undefined]
+**requirement_type** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -20,6 +21,7 @@ const instance: BadgeItem = {
     icon_slug,
     id,
     name,
+    requirement_type,
 };
 ```
 

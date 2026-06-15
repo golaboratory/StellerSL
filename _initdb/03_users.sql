@@ -1,3 +1,4 @@
 -- Password is 'password123'
-INSERT INTO users (id, tenant_id, email, password_hash, name) VALUES 
-('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'test@example.com', '$2a$10$ZRPnh0t2SiERX2HFp1GQ1ubyr7uxvoK2IQQG3vEuJs9tufEfl7yuO', 'Test User');
+-- The seed user is an administrator (can use POST /auth/reset-password)
+INSERT INTO users (id, tenant_id, email, password_hash, name, is_admin) VALUES
+('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'test@example.com', '$2a$10$ZRPnh0t2SiERX2HFp1GQ1ubyr7uxvoK2IQQG3vEuJs9tufEfl7yuO', 'Test User', TRUE);

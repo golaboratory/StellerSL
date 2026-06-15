@@ -1273,10 +1273,20 @@ const apiInstance = new DefaultApi(configuration);
 
 let limit: number; // (optional) (default to 50)
 let offset: number; // (optional) (default to 0)
+let status: string; //Filter by status (todo, doing, done) (optional) (default to undefined)
+let priority: number; //Filter by priority, -1 for no filter (optional) (default to -1)
+let projectId: string; //Filter by project UUID (optional) (default to undefined)
+let dueDateFrom: string; //Filter due_date >= this RFC3339 timestamp (optional) (default to undefined)
+let dueDateTo: string; //Filter due_date <= this RFC3339 timestamp (optional) (default to undefined)
 
 const { status, data } = await apiInstance.listTasks(
     limit,
-    offset
+    offset,
+    status,
+    priority,
+    projectId,
+    dueDateFrom,
+    dueDateTo
 );
 ```
 
@@ -1286,6 +1296,11 @@ const { status, data } = await apiInstance.listTasks(
 |------------- | ------------- | ------------- | -------------|
 | **limit** | [**number**] |  | (optional) defaults to 50|
 | **offset** | [**number**] |  | (optional) defaults to 0|
+| **status** | [**string**] | Filter by status (todo, doing, done) | (optional) defaults to undefined|
+| **priority** | [**number**] | Filter by priority, -1 for no filter | (optional) defaults to -1|
+| **projectId** | [**string**] | Filter by project UUID | (optional) defaults to undefined|
+| **dueDateFrom** | [**string**] | Filter due_date &gt;&#x3D; this RFC3339 timestamp | (optional) defaults to undefined|
+| **dueDateTo** | [**string**] | Filter due_date &lt;&#x3D; this RFC3339 timestamp | (optional) defaults to undefined|
 
 
 ### Return type

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { DefaultApi, Configuration, TaskItem } from '../api';
+import { DefaultApi } from '../api';
+import type { TaskItem } from '../api';
 import axiosInstance from '../api/axios';
 import Card from 'primevue/card';
 import Toolbar from 'primevue/toolbar';
@@ -14,8 +14,8 @@ import Textarea from 'primevue/textarea';
 import SelectButton from 'primevue/selectbutton';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import DatePicker from 'primevue/datepicker';
 
-const auth = useAuthStore();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const tasks = ref<TaskItem[]>([]);
@@ -35,7 +35,9 @@ const bulkLoading = ref(false);
 // Edit Task Dialog
 const showEditDialog = ref(false);
 const editTask = ref<any>(null);
+const editDueDate = ref<Date | null>(null);
 const editLoading = ref(false);
+const editTitleError = ref('');
 
 const filteredTasks = computed(() => {
     if (!searchQuery.value) return tasks.value;
@@ -48,21 +50,30 @@ const filteredTasks = computed(() => {
 
 const openEditDialog = (task: any) => {
     editTask.value = { ...task };
+    editDueDate.value = task.due_date ? new Date(task.due_date) : null;
+    editTitleError.value = '';
     showEditDialog.value = true;
 };
 
 const handleUpdateTask = async () => {
     if (!editTask.value) return;
+    if (!editTask.value.title?.trim()) {
+        editTitleError.value = 'Title is required';
+        return;
+    }
+    editTitleError.value = '';
     editLoading.value = true;
     try {
-        await api.updateTask({ 
-            id: editTask.value.id, 
-            taskInput: {
-                title: editTask.value.title,
+        await api.updateTask({
+            id: editTask.value.id,
+            updateTaskRequest: {
+                title: editTask.value.title.trim(),
                 status: editTask.value.status,
                 priority: editTask.value.priority,
                 description: editTask.value.description || "",
-                project_id: editTask.value.project_id
+                project_id: editTask.value.project_id || undefined,
+                assigned_to: editTask.value.assigned_to || undefined,
+                due_date: editDueDate.value ? editDueDate.value.toISOString() : undefined
             }
         });
         showEditDialog.value = false;
@@ -98,7 +109,7 @@ const getStatusSeverity = (status: string) => {
     }
 };
 
-const updateStatus = async (task: any, newStatus: string) => {
+const updateStatus = async (task: any, newStatus: 'todo' | 'doing' | 'done') => {
     try {
         await api.updateTaskStatus({ 
             id: task.id, 
@@ -113,7 +124,7 @@ const updateStatus = async (task: any, newStatus: string) => {
     }
 };
 
-const handleBulkStatus = async (newStatus: string) => {
+const handleBulkStatus = async (newStatus: 'todo' | 'doing' | 'done') => {
     if (selectedTasks.value.length === 0) return;
     try {
         await api.bulkUpdateTasksStatus({ 
@@ -185,9 +196,9 @@ const handleBulkCreate = async () => {
     </Toolbar>
 
     <!-- Bulk Actions Bar -->
-    <div v-if="selectedTasks.length > 0" class="mb-4 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-between border border-primary-100 dark:border-primary-800 animate-fadein">
+    <div v-if="selectedTasks.length > 0" class="mb-4 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-between flex-wrap gap-2 border border-primary-100 dark:border-primary-800 animate-fadein">
         <span class="font-bold">{{ selectedTasks.length }} tasks selected</span>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
             <Button label="Set Todo" severity="secondary" size="small" @click="handleBulkStatus('todo')" />
             <Button label="Set Doing" severity="warn" size="small" @click="handleBulkStatus('doing')" />
             <Button label="Set Done" severity="success" size="small" @click="handleBulkStatus('done')" />
@@ -204,7 +215,7 @@ const handleBulkCreate = async () => {
         <template #content>
             <div class="flex items-center gap-4">
                 <Checkbox v-model="selectedTasks" :value="task.id" />
-                <div class="flex-1 flex items-center justify-between">
+                <div class="flex-1 flex items-center justify-between flex-wrap gap-2 min-w-0">
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="text-lg font-bold">{{ task.title }}</h3>
@@ -212,7 +223,7 @@ const handleBulkCreate = async () => {
                         </div>
                         <div class="flex items-center gap-2 mt-2">
                             <Tag :value="task.status.toUpperCase()" :severity="getStatusSeverity(task.status)" />
-                            <span v-if="task.due_date && task.due_date !== '0001-01-01 00:00:00 +0000 UTC'" class="text-xs text-gray-500">
+                            <span v-if="task.due_date" class="text-xs text-gray-500">
                                 <i class="pi pi-calendar mr-1"></i>{{ new Date(task.due_date).toLocaleDateString() }}
                             </span>
                         </div>
@@ -239,19 +250,24 @@ const handleBulkCreate = async () => {
     </div>
 
     <!-- Edit Task Dialog -->
-    <Dialog v-model:visible="showEditDialog" header="Edit Task" :style="{ width: '450px' }" modal>
+    <Dialog v-model:visible="showEditDialog" header="Edit Task" :style="{ width: '450px' }" :breakpoints="{ '640px': '92vw' }" modal>
         <div v-if="editTask" class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
                 <label for="title" class="font-bold">Title</label>
-                <InputText id="title" v-model="editTask.title" />
+                <InputText id="title" v-model="editTask.title" :invalid="!!editTitleError" />
+                <small v-if="editTitleError" class="text-red-500">{{ editTitleError }}</small>
             </div>
             <div class="flex flex-col gap-2">
                 <label for="status" class="font-bold">Status</label>
                 <SelectButton v-model="editTask.status" :options="['todo', 'doing', 'done']" class="uppercase" />
             </div>
             <div class="flex flex-col gap-2">
+                <label for="dueDate" class="font-bold">Due Date</label>
+                <DatePicker inputId="dueDate" v-model="editDueDate" showTime hourFormat="24" showButtonBar fluid />
+            </div>
+            <div class="flex flex-col gap-2">
                 <label for="priority" class="font-bold">Priority</label>
-                <SelectButton v-model="editTask.priority" :options="[0, 1]" :optionLabel="(opt) => opt === 1 ? 'High' : 'Normal'" />
+                <SelectButton v-model="editTask.priority" :options="[{ label: 'Normal', value: 0 }, { label: 'High', value: 1 }]" optionLabel="label" optionValue="value" />
             </div>
             <div class="flex flex-col gap-2">
                 <label for="description" class="font-bold">Description</label>
@@ -265,7 +281,7 @@ const handleBulkCreate = async () => {
     </Dialog>
 
     <!-- Bulk Create Dialog -->
-    <Dialog v-model:visible="showBulkDialog" header="Bulk Add Tasks" :style="{ width: '500px' }" modal>
+    <Dialog v-model:visible="showBulkDialog" header="Bulk Add Tasks" :style="{ width: '500px' }" :breakpoints="{ '640px': '92vw' }" modal>
         <div class="flex flex-col gap-4">
             <label>Enter one task title per line:</label>
             <Textarea v-model="bulkText" rows="10" class="w-full font-mono" placeholder="Task 1&#10;Task 2&#10;Task 3" />

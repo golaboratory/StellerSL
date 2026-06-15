@@ -9,10 +9,11 @@ type GrowthOutput struct {
 }
 
 type BadgeItem struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IconSlug    string `json:"icon_slug"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	IconSlug        string `json:"icon_slug"`
+	RequirementType string `json:"requirement_type"`
 }
 
 type BadgeListOutput struct {

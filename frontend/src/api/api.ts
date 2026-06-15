@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from './common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
 import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
@@ -47,6 +47,7 @@ export interface BadgeItem {
     'icon_slug': string;
     'id': string;
     'name': string;
+    'requirement_type': string;
 }
 export interface BadgeListOutputBody {
     /**
@@ -189,6 +190,7 @@ export interface MeOutputBody {
     'avatar_url': string;
     'email': string;
     'id': string;
+    'is_admin': boolean;
     'name': string;
 }
 export interface NotificationItem {
@@ -310,6 +312,9 @@ export const TaskInputBodyStatusEnum = {
 export type TaskInputBodyStatusEnum = typeof TaskInputBodyStatusEnum[keyof typeof TaskInputBodyStatusEnum];
 
 export interface TaskItem {
+    'assigned_to'?: string;
+    'created_at'?: string;
+    'description'?: string;
     'due_date'?: string;
     'id': string;
     'priority': number;
@@ -329,6 +334,7 @@ export interface TaskOutputBody {
      * A URL to the JSON Schema for this object.
      */
     '$schema'?: string;
+    'assigned_to'?: string;
     'created_at': string;
     'description': string;
     'due_date': string;
@@ -401,6 +407,7 @@ export interface TeamMemberUser {
     'email': string;
     'id': string;
     'name': string;
+    'role': string;
 }
 export interface UnreadCountOutputBody {
     /**
@@ -1287,10 +1294,15 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @summary List Tasks
          * @param {number} [limit] 
          * @param {number} [offset] 
+         * @param {string} [status] Filter by status (todo, doing, done)
+         * @param {number} [priority] Filter by priority, -1 for no filter
+         * @param {string} [projectId] Filter by project UUID
+         * @param {string} [dueDateFrom] Filter due_date &gt;&#x3D; this RFC3339 timestamp
+         * @param {string} [dueDateTo] Filter due_date &lt;&#x3D; this RFC3339 timestamp
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listTasks: async (limit?: number, offset?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        listTasks: async (limit?: number, offset?: number, status?: string, priority?: number, projectId?: string, dueDateFrom?: string, dueDateTo?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/tasks`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1309,6 +1321,26 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
 
             if (offset !== undefined) {
                 localVarQueryParameter['offset'] = offset;
+            }
+
+            if (status !== undefined) {
+                localVarQueryParameter['status'] = status;
+            }
+
+            if (priority !== undefined) {
+                localVarQueryParameter['priority'] = priority;
+            }
+
+            if (projectId !== undefined) {
+                localVarQueryParameter['project_id'] = projectId;
+            }
+
+            if (dueDateFrom !== undefined) {
+                localVarQueryParameter['due_date_from'] = dueDateFrom;
+            }
+
+            if (dueDateTo !== undefined) {
+                localVarQueryParameter['due_date_to'] = dueDateTo;
             }
 
             localVarHeaderParameter['Accept'] = 'application/json,application/problem+json';
@@ -2222,11 +2254,16 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @summary List Tasks
          * @param {number} [limit] 
          * @param {number} [offset] 
+         * @param {string} [status] Filter by status (todo, doing, done)
+         * @param {number} [priority] Filter by priority, -1 for no filter
+         * @param {string} [projectId] Filter by project UUID
+         * @param {string} [dueDateFrom] Filter due_date &gt;&#x3D; this RFC3339 timestamp
+         * @param {string} [dueDateTo] Filter due_date &lt;&#x3D; this RFC3339 timestamp
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listTasks(limit?: number, offset?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TaskListOutputBody>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listTasks(limit, offset, options);
+        async listTasks(limit?: number, offset?: number, status?: string, priority?: number, projectId?: string, dueDateFrom?: string, dueDateTo?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TaskListOutputBody>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listTasks(limit, offset, status, priority, projectId, dueDateFrom, dueDateTo, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.listTasks']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -2696,7 +2733,7 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @throws {RequiredError}
          */
         listTasks(requestParameters: DefaultApiListTasksRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<TaskListOutputBody> {
-            return localVarFp.listTasks(requestParameters.limit, requestParameters.offset, options).then((request) => request(axios, basePath));
+            return localVarFp.listTasks(requestParameters.limit, requestParameters.offset, requestParameters.status, requestParameters.priority, requestParameters.projectId, requestParameters.dueDateFrom, requestParameters.dueDateTo, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3007,6 +3044,31 @@ export interface DefaultApiListTasksRequest {
     readonly limit?: number
 
     readonly offset?: number
+
+    /**
+     * Filter by status (todo, doing, done)
+     */
+    readonly status?: string
+
+    /**
+     * Filter by priority, -1 for no filter
+     */
+    readonly priority?: number
+
+    /**
+     * Filter by project UUID
+     */
+    readonly projectId?: string
+
+    /**
+     * Filter due_date &gt;&#x3D; this RFC3339 timestamp
+     */
+    readonly dueDateFrom?: string
+
+    /**
+     * Filter due_date &lt;&#x3D; this RFC3339 timestamp
+     */
+    readonly dueDateTo?: string
 }
 
 /**
@@ -3392,7 +3454,7 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      */
     public listTasks(requestParameters: DefaultApiListTasksRequest = {}, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).listTasks(requestParameters.limit, requestParameters.offset, options).then((request) => request(this.axios, this.basePath));
+        return DefaultApiFp(this.configuration).listTasks(requestParameters.limit, requestParameters.offset, requestParameters.status, requestParameters.priority, requestParameters.projectId, requestParameters.dueDateFrom, requestParameters.dueDateTo, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

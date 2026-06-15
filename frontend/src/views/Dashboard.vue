@@ -2,15 +2,17 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { DefaultApi, DashboardOutputBody } from '../api';
+import { DefaultApi } from '../api';
+import type { DashboardOutputBody } from '../api';
 import axiosInstance from '../api/axios';
 import Tag from 'primevue/tag';
-import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 import Card from 'primevue/card';
 import Toolbar from 'primevue/toolbar';
 import Button from 'primevue/button';
 import ProgressBar from 'primevue/progressbar';
+import NotificationBell from '../components/NotificationBell.vue';
+import { badgeIconUrl } from '../lib/badgeIcons';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -72,11 +74,25 @@ const getExpProgress = () => {
     return (growth.value.exp % 100);
 };
 
-const getAvatarConfig = () => {
+// Character evolution stages (バッジの仕様.md):
+// Lv.1-4 egg / Lv.5-9 chick / Lv.10-19 chicken / Lv.20+ phoenix
+type CharacterStyle = { icon: string; label: string; color: string; bg: string };
+const characterConfig: { egg: CharacterStyle; chick: CharacterStyle; chicken: CharacterStyle; phoenix: CharacterStyle } = {
+    egg:     { icon: 'pi-circle',  label: 'たまご (Egg)',           color: 'text-primary-500', bg: 'bg-primary-100' },
+    chick:   { icon: 'pi-twitter', label: 'ひよこ (Chick)',         color: 'text-orange-500',  bg: 'bg-orange-100' },
+    chicken: { icon: 'pi-heart',   label: 'にわとり (Chicken)',     color: 'text-red-500',     bg: 'bg-red-100' },
+    phoenix: { icon: 'pi-bolt',    label: 'フェニックス (Phoenix)', color: 'text-yellow-500',  bg: 'bg-yellow-100' },
+};
+
+const getAvatarConfig = (): CharacterStyle => {
+    const byType = (characterConfig as Record<string, CharacterStyle | undefined>)[growth.value.character_type];
+    if (byType) return byType;
+    // Fallback for accounts whose character_type predates auto-evolution
     const level = growth.value.level;
-    if (level >= 10) return { icon: 'pi-bolt', color: 'text-yellow-500', bg: 'bg-yellow-100' };
-    if (level >= 5) return { icon: 'pi-star-fill', color: 'text-orange-500', bg: 'bg-orange-100' };
-    return { icon: 'pi-user', color: 'text-primary-500', bg: 'bg-primary-100' };
+    if (level >= 20) return characterConfig.phoenix;
+    if (level >= 10) return characterConfig.chicken;
+    if (level >= 5) return characterConfig.chick;
+    return characterConfig.egg;
 };
 
 const formatAction = (action: string) => {
@@ -86,7 +102,6 @@ const formatAction = (action: string) => {
 
 
 <template>
-  <Toast />
   <div class="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
 
     <Toolbar class="mb-8 p-4 rounded-xl shadow-sm">
@@ -94,7 +109,7 @@ const formatAction = (action: string) => {
         <span class="text-2xl font-bold text-primary px-4">StellerSL Dashboard</span>
       </template>
       <template #end>
-        <div class="flex items-center gap-4">
+        <div class="nav-compact flex items-center justify-end flex-wrap gap-1 md:gap-3">
           <router-link to="/teams">
             <Button icon="pi pi-users" label="Teams" text />
           </router-link>
@@ -110,6 +125,7 @@ const formatAction = (action: string) => {
           <router-link to="/profile">
             <Button icon="pi pi-user" label="Profile" text />
           </router-link>
+          <NotificationBell />
           <Button icon="pi pi-moon" text @click="toggleDarkMode" />
           <span class="font-medium hidden md:inline">Welcome, {{ auth.user?.name }}</span>
           <Button icon="pi pi-sign-out" label="Logout" severity="secondary" text @click="handleLogout" />
@@ -132,7 +148,7 @@ const formatAction = (action: string) => {
             </div>
             <div class="text-center">
                 <div class="text-xl font-bold uppercase tracking-wider text-primary">Level {{ growth.level }}</div>
-                <div class="text-sm text-gray-500 mt-1">Character: {{ growth.character_type }}</div>
+                <div class="text-sm text-gray-500 mt-1">Character: {{ getAvatarConfig().label }}</div>
             </div>
             <div class="w-full">
                 <div class="flex justify-between text-xs mb-1">
@@ -177,9 +193,9 @@ const formatAction = (action: string) => {
             <template #content>
                 <div class="h-64 flex items-end gap-2 border-b-2 border-gray-100 dark:border-gray-800 pb-2">
                     <div v-for="day in stats.daily_activity" :key="day.date" class="flex-1 flex flex-col gap-1 items-center group">
-                        <div class="w-full bg-blue-400 rounded-t-sm" :style="{ height: Math.min(day.created * 10, 150) + 'px' }"></div>
-                        <div class="w-full bg-green-400 rounded-t-sm" :style="{ height: Math.min(day.completed * 10, 150) + 'px' }"></div>
-                        <span class="text-xs text-gray-400 mt-2">{{ day.date.split('-').slice(1).join('/') }}</span>
+                        <div class="w-full bg-blue-400 rounded-t-sm" :style="{ height: Math.min((day.created ?? 0) * 10, 150) + 'px' }"></div>
+                        <div class="w-full bg-green-400 rounded-t-sm" :style="{ height: Math.min((day.completed ?? 0) * 10, 150) + 'px' }"></div>
+                        <span class="text-xs text-gray-400 mt-2">{{ (day.date ?? '').split('-').slice(1).join('/') }}</span>
                     </div>
                 </div>
                 <div class="flex gap-4 mt-6 text-sm text-gray-500 justify-center">
@@ -220,7 +236,8 @@ const formatAction = (action: string) => {
                 </div>
                 <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     <div v-for="badge in badges" :key="badge.id" class="flex flex-col items-center gap-2 p-4 border rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 transition-transform hover:scale-105">
-                        <i :class="'pi ' + badge.icon_slug" class="text-3xl text-yellow-500"></i>
+                        <img v-if="badgeIconUrl(badge.requirement_type)" :src="badgeIconUrl(badge.requirement_type)!" :alt="badge.name" class="badge-icon w-14 h-14" />
+                        <i v-else :class="'pi ' + badge.icon_slug" class="text-3xl text-yellow-500"></i>
                         <span class="text-xs font-bold text-center">{{ badge.name }}</span>
                         <span class="text-[10px] text-gray-500 text-center">{{ badge.description }}</span>
                     </div>

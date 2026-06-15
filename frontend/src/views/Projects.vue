@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { DefaultApi, Configuration, ProjectItem } from '../api';
+import { DefaultApi } from '../api';
+import type { ProjectItem } from '../api';
 import axiosInstance from '../api/axios';
 import Card from 'primevue/card';
 import Toolbar from 'primevue/toolbar';
@@ -10,7 +10,6 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 
-const auth = useAuthStore();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const projects = ref<ProjectItem[]>([]);
@@ -39,8 +38,14 @@ const fetchProjects = async () => {
 
 onMounted(fetchProjects);
 
+const nameError = ref('');
+
 const handleCreateProject = async () => {
-    if (!newProject.value.name) return;
+    if (!newProject.value.name.trim()) {
+        nameError.value = 'Project name is required';
+        return;
+    }
+    nameError.value = '';
     createLoading.value = true;
     try {
         await api.createProject({ projectInputBody: { name: newProject.value.name, description: newProject.value.description } });
@@ -102,11 +107,12 @@ const handleCreateProject = async () => {
     </div>
 
     <!-- Create Project Dialog -->
-    <Dialog v-model:visible="showCreateDialog" header="Create New Project" :style="{ width: '450px' }" modal>
+    <Dialog v-model:visible="showCreateDialog" header="Create New Project" :style="{ width: '450px' }" :breakpoints="{ '640px': '92vw' }" modal>
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
                 <label for="name" class="font-bold">Project Name</label>
-                <InputText id="name" v-model="newProject.name" placeholder="e.g. Website Redesign" />
+                <InputText id="name" v-model="newProject.name" placeholder="e.g. Website Redesign" :invalid="!!nameError" />
+                <small v-if="nameError" class="text-red-500">{{ nameError }}</small>
             </div>
             <div class="flex flex-col gap-2">
                 <label for="desc" class="font-bold">Description</label>

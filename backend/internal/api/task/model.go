@@ -1,12 +1,15 @@
 package task
 
 type TaskItem struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	Title     string `json:"title"`
-	Status    string `json:"status"`
-	Priority  int    `json:"priority"`
-	DueDate   string `json:"due_date,omitempty"`
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	AssignedTo  string `json:"assigned_to,omitempty"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+	Status      string `json:"status"`
+	Priority    int    `json:"priority"`
+	DueDate     string `json:"due_date,omitempty"`
+	CreatedAt   string `json:"created_at,omitempty"`
 }
 
 type TaskListOutput struct {
@@ -31,6 +34,7 @@ type TaskOutput struct {
 	Body struct {
 		ID          string `json:"id"`
 		ProjectID   string `json:"project_id"`
+		AssignedTo  string `json:"assigned_to,omitempty"`
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Status      string `json:"status"`

@@ -18,8 +18,29 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+}
+
+/* The app root must span the viewport; the Vite starter centered it as a
+   content-sized flex item, which broke full-width responsive layouts. */
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Compact navigation: below md, toolbar buttons collapse to icons only.
+   The label stays in the DOM for accessibility. */
+@media (max-width: 767px) {
+  .nav-compact .p-button .p-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .nav-compact .p-button {
+    padding-inline: 0.6rem;
+  }
 }

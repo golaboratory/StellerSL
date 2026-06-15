@@ -83,10 +83,13 @@ func RegisterHandlers(api huma.API, service *Service, getTenantID func(context.C
 		if err != nil {
 			return nil, huma.Error401Unauthorized("Unauthorized")
 		}
+		isAdmin, err := service.IsAdmin(ctx, auth.TenantID, auth.UserID)
+		if err != nil || !isAdmin {
+			return nil, huma.Error403Forbidden("Administrator privileges required")
+		}
 		if err := service.ResetPassword(ctx, auth.TenantID, *input); err != nil {
 			return nil, huma.Error500InternalServerError("Failed to reset password")
 		}
-		_ = auth // TODO: add admin role check in future
 		return nil, nil
 	})
 

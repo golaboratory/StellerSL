@@ -54,10 +54,11 @@ func (s *Service) ListBadges(ctx context.Context, tenantID, userID string) (*Bad
 	resp := &BadgeListOutput{}
 	for _, b := range badges {
 		resp.Body.Items = append(resp.Body.Items, BadgeItem{
-			ID:          b.ID.String(),
-			Name:        b.Name,
-			Description: b.Description.String,
-			IconSlug:    b.IconSlug,
+			ID:              b.ID.String(),
+			Name:            b.Name,
+			Description:     b.Description.String,
+			IconSlug:        b.IconSlug,
+			RequirementType: b.RequirementType,
 		})
 	}
 	return resp, nil

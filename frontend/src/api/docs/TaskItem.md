@@ -5,6 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**assigned_to** | **string** |  | [optional] [default to undefined]
+**created_at** | **string** |  | [optional] [default to undefined]
+**description** | **string** |  | [optional] [default to undefined]
 **due_date** | **string** |  | [optional] [default to undefined]
 **id** | **string** |  | [default to undefined]
 **priority** | **number** |  | [default to undefined]
@@ -18,6 +21,9 @@ Name | Type | Description | Notes
 import { TaskItem } from './api';
 
 const instance: TaskItem = {
+    assigned_to,
+    created_at,
+    description,
     due_date,
     id,
     priority,

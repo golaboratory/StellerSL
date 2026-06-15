@@ -53,6 +53,7 @@ type MeOutput struct {
 		Email     string `json:"email"`
 		Name      string `json:"name"`
 		AvatarUrl string `json:"avatar_url"`
+		IsAdmin   bool   `json:"is_admin"`
 	}
 }
 

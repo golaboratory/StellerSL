@@ -106,10 +106,15 @@ JOIN project_users pu ON u.id = pu.user_id
 WHERE pu.project_id = $1;
 
 -- name: ListTasks :many
-SELECT * FROM tasks 
-WHERE deleted_at IS NULL AND project_id = COALESCE($1, project_id) 
+SELECT * FROM tasks
+WHERE deleted_at IS NULL
+  AND (sqlc.narg('project_id')::uuid IS NULL OR project_id = sqlc.narg('project_id'))
+  AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status'))
+  AND (sqlc.narg('priority')::int IS NULL OR priority = sqlc.narg('priority'))
+  AND (sqlc.narg('due_date_from')::timestamptz IS NULL OR due_date >= sqlc.narg('due_date_from'))
+  AND (sqlc.narg('due_date_to')::timestamptz IS NULL OR due_date <= sqlc.narg('due_date_to'))
 ORDER BY created_at DESC
-LIMIT $2 OFFSET $3;
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetTask :one
 SELECT * FROM tasks WHERE id = $1 AND deleted_at IS NULL;
@@ -123,8 +128,8 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING *;
 
 -- name: UpdateTask :one
-UPDATE tasks 
-SET title = $2, description = $3, status = $4, priority = $5, due_date = $6, updated_at = CURRENT_TIMESTAMP 
+UPDATE tasks
+SET title = $2, description = $3, status = $4, priority = $5, due_date = $6, assigned_to = $7, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
@@ -158,10 +163,11 @@ ON CONFLICT (team_id, user_id) DO UPDATE SET role = EXCLUDED.role;
 DELETE FROM team_members WHERE team_id = $1 AND user_id = $2;
 
 -- name: ListTeamMembers :many
-SELECT u.*
+SELECT u.id, u.email, u.name, u.avatar_url, tm.role
 FROM users u
 JOIN team_members tm ON u.id = tm.user_id
-WHERE tm.team_id = $1;
+WHERE tm.team_id = $1
+ORDER BY CASE tm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name ASC;
 
 -- === Activity Log Queries ===
 
@@ -188,8 +194,10 @@ JOIN tasks t ON al.task_id = t.id
 WHERE al.user_id = $1 AND al.action = 'task_completed' AND al.logged_at = CURRENT_DATE;
 
 -- name: GetLastActivityDate :one
+-- Last completion date BEFORE today (activity logs are written before badge
+-- evaluation, so today's completion must be excluded for comeback detection).
 SELECT COALESCE(MAX(logged_at), '1970-01-01'::date)::date as last_date FROM activity_logs
-WHERE user_id = $1 AND action = 'task_completed';
+WHERE user_id = $1 AND action = 'task_completed' AND logged_at < CURRENT_DATE;
 
 -- === Streak Queries ===
 
@@ -217,6 +225,23 @@ UPDATE user_growth SET character_type = $2, updated_at = CURRENT_TIMESTAMP WHERE
 
 -- name: CountProjectsByUser :one
 SELECT COUNT(*)::int as count FROM project_users WHERE user_id = $1;
+
+-- name: CountTeamMembershipsByUser :one
+SELECT COUNT(*)::int as count FROM team_members WHERE user_id = $1;
+
+-- name: CountTasksCompletedTodayInHour :one
+-- Completions today within the given hour (server-local), e.g. 12 = 12:00-12:59.
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND logged_at = CURRENT_DATE
+  AND EXTRACT(HOUR FROM created_at)::int = $2::int;
+
+-- name: CountTasksCompletedLastHour :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND created_at >= NOW() - INTERVAL '1 hour';
+
+-- name: GetProjectTaskCounts :one
+SELECT COUNT(*)::int AS total, (COUNT(*) FILTER (WHERE status != 'done'))::int AS remaining
+FROM tasks WHERE project_id = $1 AND deleted_at IS NULL;
 
 -- === Team Extra Queries ===
 

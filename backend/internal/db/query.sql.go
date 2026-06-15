@@ -124,6 +124,18 @@ func (q *Queries) CountProjectsByUser(ctx context.Context, userID uuid.UUID) (in
 	return count, err
 }
 
+const countTasksCompletedLastHour = `-- name: CountTasksCompletedLastHour :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND created_at >= NOW() - INTERVAL '1 hour'
+`
+
+func (q *Queries) CountTasksCompletedLastHour(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countTasksCompletedLastHour, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countTasksCompletedOnWeekends = `-- name: CountTasksCompletedOnWeekends :one
 SELECT COUNT(*)::int as count FROM activity_logs
 WHERE user_id = $1 AND action = 'task_completed' AND EXTRACT(DOW FROM logged_at) IN (0, 6)
@@ -148,6 +160,25 @@ func (q *Queries) CountTasksCompletedToday(ctx context.Context, userID uuid.UUID
 	return count, err
 }
 
+const countTasksCompletedTodayInHour = `-- name: CountTasksCompletedTodayInHour :one
+SELECT COUNT(*)::int as count FROM activity_logs
+WHERE user_id = $1 AND action = 'task_completed' AND logged_at = CURRENT_DATE
+  AND EXTRACT(HOUR FROM created_at)::int = $2::int
+`
+
+type CountTasksCompletedTodayInHourParams struct {
+	UserID  uuid.UUID `json:"user_id"`
+	Column2 int32     `json:"column_2"`
+}
+
+// Completions today within the given hour (server-local), e.g. 12 = 12:00-12:59.
+func (q *Queries) CountTasksCompletedTodayInHour(ctx context.Context, arg CountTasksCompletedTodayInHourParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countTasksCompletedTodayInHour, arg.UserID, arg.Column2)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countTasksCreatedToday = `-- name: CountTasksCreatedToday :one
 SELECT COUNT(*)::int as count FROM activity_logs
 WHERE user_id = $1 AND action = 'task_created' AND logged_at = CURRENT_DATE
@@ -155,6 +186,17 @@ WHERE user_id = $1 AND action = 'task_created' AND logged_at = CURRENT_DATE
 
 func (q *Queries) CountTasksCreatedToday(ctx context.Context, userID uuid.UUID) (int32, error) {
 	row := q.db.QueryRowContext(ctx, countTasksCreatedToday, userID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTeamMembershipsByUser = `-- name: CountTeamMembershipsByUser :one
+SELECT COUNT(*)::int as count FROM team_members WHERE user_id = $1
+`
+
+func (q *Queries) CountTeamMembershipsByUser(ctx context.Context, userID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countTeamMembershipsByUser, userID)
 	var count int32
 	err := row.Scan(&count)
 	return count, err
@@ -297,7 +339,7 @@ func (q *Queries) CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, e
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (tenant_id, email, password_hash, name)
 VALUES ($1, $2, $3, $4)
-RETURNING id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at
+RETURNING id, tenant_id, email, password_hash, name, avatar_url, is_admin, created_at, updated_at
 `
 
 type CreateUserParams struct {
@@ -322,6 +364,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -428,9 +471,11 @@ func (q *Queries) GetDashboardStats(ctx context.Context, assignedTo uuid.NullUUI
 
 const getLastActivityDate = `-- name: GetLastActivityDate :one
 SELECT COALESCE(MAX(logged_at), '1970-01-01'::date)::date as last_date FROM activity_logs
-WHERE user_id = $1 AND action = 'task_completed'
+WHERE user_id = $1 AND action = 'task_completed' AND logged_at < CURRENT_DATE
 `
 
+// Last completion date BEFORE today (activity logs are written before badge
+// evaluation, so today's completion must be excluded for comeback detection).
 func (q *Queries) GetLastActivityDate(ctx context.Context, userID uuid.UUID) (time.Time, error) {
 	row := q.db.QueryRowContext(ctx, getLastActivityDate, userID)
 	var last_date time.Time
@@ -453,6 +498,23 @@ func (q *Queries) GetProject(ctx context.Context, id uuid.UUID) (Project, error)
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
+	return i, err
+}
+
+const getProjectTaskCounts = `-- name: GetProjectTaskCounts :one
+SELECT COUNT(*)::int AS total, (COUNT(*) FILTER (WHERE status != 'done'))::int AS remaining
+FROM tasks WHERE project_id = $1 AND deleted_at IS NULL
+`
+
+type GetProjectTaskCountsRow struct {
+	Total     int32 `json:"total"`
+	Remaining int32 `json:"remaining"`
+}
+
+func (q *Queries) GetProjectTaskCounts(ctx context.Context, projectID uuid.NullUUID) (GetProjectTaskCountsRow, error) {
+	row := q.db.QueryRowContext(ctx, getProjectTaskCounts, projectID)
+	var i GetProjectTaskCountsRow
+	err := row.Scan(&i.Total, &i.Remaining)
 	return i, err
 }
 
@@ -601,7 +663,7 @@ func (q *Queries) GetTenantByDomain(ctx context.Context, domain string) (Tenant,
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at FROM users WHERE email = $1
+SELECT id, tenant_id, email, password_hash, name, avatar_url, is_admin, created_at, updated_at FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -614,6 +676,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -621,7 +684,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at FROM users WHERE id = $1
+SELECT id, tenant_id, email, password_hash, name, avatar_url, is_admin, created_at, updated_at FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -634,6 +697,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.PasswordHash,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -761,7 +825,7 @@ func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsPa
 }
 
 const listProjectMembers = `-- name: ListProjectMembers :many
-SELECT u.id, u.tenant_id, u.email, u.password_hash, u.name, u.avatar_url, u.created_at, u.updated_at
+SELECT u.id, u.tenant_id, u.email, u.password_hash, u.name, u.avatar_url, u.is_admin, u.created_at, u.updated_at
 FROM users u
 JOIN project_users pu ON u.id = pu.user_id
 WHERE pu.project_id = $1
@@ -783,6 +847,7 @@ func (q *Queries) ListProjectMembers(ctx context.Context, projectID uuid.UUID) (
 			&i.PasswordHash,
 			&i.Name,
 			&i.AvatarUrl,
+			&i.IsAdmin,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -841,20 +906,37 @@ func (q *Queries) ListProjects(ctx context.Context, arg ListProjectsParams) ([]P
 }
 
 const listTasks = `-- name: ListTasks :many
-SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at FROM tasks 
-WHERE deleted_at IS NULL AND project_id = COALESCE($1, project_id) 
+SELECT id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at FROM tasks
+WHERE deleted_at IS NULL
+  AND ($1::uuid IS NULL OR project_id = $1)
+  AND ($2::text IS NULL OR status = $2)
+  AND ($3::int IS NULL OR priority = $3)
+  AND ($4::timestamptz IS NULL OR due_date >= $4)
+  AND ($5::timestamptz IS NULL OR due_date <= $5)
 ORDER BY created_at DESC
-LIMIT $2 OFFSET $3
+LIMIT $7 OFFSET $6
 `
 
 type ListTasksParams struct {
-	ProjectID uuid.NullUUID `json:"project_id"`
-	Limit     int32         `json:"limit"`
-	Offset    int32         `json:"offset"`
+	ProjectID   uuid.NullUUID  `json:"project_id"`
+	Status      sql.NullString `json:"status"`
+	Priority    sql.NullInt32  `json:"priority"`
+	DueDateFrom sql.NullTime   `json:"due_date_from"`
+	DueDateTo   sql.NullTime   `json:"due_date_to"`
+	Offset      int32          `json:"offset"`
+	Limit       int32          `json:"limit"`
 }
 
 func (q *Queries) ListTasks(ctx context.Context, arg ListTasksParams) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, listTasks, arg.ProjectID, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, listTasks,
+		arg.ProjectID,
+		arg.Status,
+		arg.Priority,
+		arg.DueDateFrom,
+		arg.DueDateTo,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -890,30 +972,36 @@ func (q *Queries) ListTasks(ctx context.Context, arg ListTasksParams) ([]Task, e
 }
 
 const listTeamMembers = `-- name: ListTeamMembers :many
-SELECT u.id, u.tenant_id, u.email, u.password_hash, u.name, u.avatar_url, u.created_at, u.updated_at
+SELECT u.id, u.email, u.name, u.avatar_url, tm.role
 FROM users u
 JOIN team_members tm ON u.id = tm.user_id
 WHERE tm.team_id = $1
+ORDER BY CASE tm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name ASC
 `
 
-func (q *Queries) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error) {
+type ListTeamMembersRow struct {
+	ID        uuid.UUID      `json:"id"`
+	Email     string         `json:"email"`
+	Name      string         `json:"name"`
+	AvatarUrl sql.NullString `json:"avatar_url"`
+	Role      string         `json:"role"`
+}
+
+func (q *Queries) ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]ListTeamMembersRow, error) {
 	rows, err := q.db.QueryContext(ctx, listTeamMembers, teamID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []ListTeamMembersRow
 	for rows.Next() {
-		var i User
+		var i ListTeamMembersRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.TenantID,
 			&i.Email,
-			&i.PasswordHash,
 			&i.Name,
 			&i.AvatarUrl,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.Role,
 		); err != nil {
 			return nil, err
 		}
@@ -1103,7 +1191,7 @@ func (q *Queries) RemoveTeamMember(ctx context.Context, arg RemoveTeamMemberPara
 }
 
 const searchUsers = `-- name: SearchUsers :many
-SELECT id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at FROM users 
+SELECT id, tenant_id, email, password_hash, name, avatar_url, is_admin, created_at, updated_at FROM users 
 WHERE (email ILIKE '%' || $1 || '%' OR name ILIKE '%' || $1 || '%')
 ORDER BY name ASC
 LIMIT $2 OFFSET $3
@@ -1131,6 +1219,7 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Use
 			&i.PasswordHash,
 			&i.Name,
 			&i.AvatarUrl,
+			&i.IsAdmin,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -1241,8 +1330,8 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 }
 
 const updateTask = `-- name: UpdateTask :one
-UPDATE tasks 
-SET title = $2, description = $3, status = $4, priority = $5, due_date = $6, updated_at = CURRENT_TIMESTAMP 
+UPDATE tasks
+SET title = $2, description = $3, status = $4, priority = $5, due_date = $6, assigned_to = $7, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, tenant_id, project_id, assigned_to, title, description, status, priority, due_date, deleted_at, created_at, updated_at
 `
@@ -1254,6 +1343,7 @@ type UpdateTaskParams struct {
 	Status      string         `json:"status"`
 	Priority    sql.NullInt32  `json:"priority"`
 	DueDate     sql.NullTime   `json:"due_date"`
+	AssignedTo  uuid.NullUUID  `json:"assigned_to"`
 }
 
 func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error) {
@@ -1264,6 +1354,7 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, e
 		arg.Status,
 		arg.Priority,
 		arg.DueDate,
+		arg.AssignedTo,
 	)
 	var i Task
 	err := row.Scan(
@@ -1340,7 +1431,7 @@ const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET name = $2, avatar_url = $3, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, tenant_id, email, password_hash, name, avatar_url, created_at, updated_at
+RETURNING id, tenant_id, email, password_hash, name, avatar_url, is_admin, created_at, updated_at
 `
 
 type UpdateUserParams struct {
@@ -1359,6 +1450,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.PasswordHash,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

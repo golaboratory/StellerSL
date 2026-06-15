@@ -6,7 +6,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  // HTML report is written but not auto-opened (avoids blocking CI/agents)
+  reporter: [['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
@@ -22,10 +23,11 @@ export default defineConfig({
     },
   ],
 
-  // Run your local dev server before starting the tests
-  // webServer: {
-  //   command: 'pnpm run dev',
-  //   url: 'http://localhost:5173',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  // Run the Vite dev server before starting the tests.
+  // The backend + DB must be running separately: `docker-compose up -d db backend`
+  webServer: {
+    command: 'pnpm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+  },
 });

@@ -23,7 +23,7 @@ func CharacterTypeForLevel(level int32) string {
 }
 
 // UpdateCharacterType checks the user's level and updates character_type if needed.
-func UpdateCharacterType(ctx context.Context, queries *db.Queries, userID uuid.UUID) error {
+func UpdateCharacterType(ctx context.Context, queries db.Querier, userID uuid.UUID) error {
 	growth, err := queries.GetUserGrowth(ctx, userID)
 	if err != nil {
 		return err

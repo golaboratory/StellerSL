@@ -15,6 +15,7 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     name TEXT NOT NULL,
     avatar_url TEXT,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(tenant_id, email)
@@ -101,7 +102,8 @@ CREATE TABLE activity_logs (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
     action TEXT NOT NULL, -- task_created, task_completed
-    logged_at DATE DEFAULT CURRENT_DATE
+    logged_at DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- time-of-day for hour-window badges
 );
 
 -- 10. User Streaks (For tracking consecutive activity)

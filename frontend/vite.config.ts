@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -25,7 +25,7 @@ export default defineConfig({
               proxyReq.setHeader('X-Tenant-Host', req.headers['x-tenant-host']);
             }
           });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
+          proxy.on('proxyRes', (_proxyRes, _req, _res) => {
             // console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         },
@@ -33,6 +33,8 @@ export default defineConfig({
     }
   },
   test: {
-    environment: 'happy-dom'
+    environment: 'happy-dom',
+    // Playwright specs live in tests/e2e and must not run under Vitest
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**']
   }
 })

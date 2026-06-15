@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,20 +21,68 @@ func NewService(conn *sql.DB, queries *db.Queries) *Service {
 	return &Service{
 		conn:    conn,
 		queries: queries,
-		engine:  gamification.NewBadgeEngine(queries),
-		streak:  gamification.NewStreakTracker(queries),
+		engine:  gamification.NewBadgeEngine(),
+		streak:  gamification.NewStreakTracker(),
 	}
 }
 
-func (s *Service) List(ctx context.Context, tenantID string, limit, offset int32) (*TaskListOutput, error) {
+func formatNullTime(nt sql.NullTime) string {
+	if !nt.Valid {
+		return ""
+	}
+	return nt.Time.Format(time.RFC3339)
+}
+
+func nullUUIDString(u uuid.NullUUID) string {
+	if !u.Valid {
+		return ""
+	}
+	return u.UUID.String()
+}
+
+func parseNullTime(s string) sql.NullTime {
+	if s == "" {
+		return sql.NullTime{}
+	}
+	if parsed, err := time.Parse(time.RFC3339, s); err == nil {
+		return sql.NullTime{Time: parsed, Valid: true}
+	}
+	return sql.NullTime{}
+}
+
+func toTaskItem(t db.Task) TaskItem {
+	return TaskItem{
+		ID:          t.ID.String(),
+		ProjectID:   nullUUIDString(t.ProjectID),
+		AssignedTo:  nullUUIDString(t.AssignedTo),
+		Title:       t.Title,
+		Description: t.Description.String,
+		Status:      t.Status,
+		Priority:    int(t.Priority.Int32),
+		DueDate:     formatNullTime(t.DueDate),
+		CreatedAt:   formatNullTime(t.CreatedAt),
+	}
+}
+
+func (s *Service) List(ctx context.Context, tenantID string, input ListTasksInput) (*TaskListOutput, error) {
+	params := db.ListTasksParams{
+		ProjectID:   db.ToNullUUID(input.ProjectID),
+		DueDateFrom: parseNullTime(input.DueDateFrom),
+		DueDateTo:   parseNullTime(input.DueDateTo),
+		Limit:       input.Limit,
+		Offset:      input.Offset,
+	}
+	if input.Status != "" {
+		params.Status = sql.NullString{String: input.Status, Valid: true}
+	}
+	if input.Priority >= 0 {
+		params.Priority = sql.NullInt32{Int32: input.Priority, Valid: true}
+	}
+
 	var tasksList []db.Task
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		tasksList, err = q.ListTasks(ctx, db.ListTasksParams{
-			ProjectID: uuid.NullUUID{},
-			Limit:     limit,
-			Offset:    offset,
-		})
+		tasksList, err = q.ListTasks(ctx, params)
 		return err
 	})
 	if err != nil {
@@ -44,14 +91,7 @@ func (s *Service) List(ctx context.Context, tenantID string, limit, offset int32
 
 	resp := &TaskListOutput{}
 	for _, t := range tasksList {
-		resp.Body.Items = append(resp.Body.Items, TaskItem{
-			ID:        t.ID.String(),
-			ProjectID: t.ProjectID.UUID.String(),
-			Title:     t.Title,
-			Status:    t.Status,
-			Priority:  int(t.Priority.Int32),
-			DueDate:   fmt.Sprintf("%v", t.DueDate.Time),
-		})
+		resp.Body.Items = append(resp.Body.Items, toTaskItem(t))
 	}
 	return resp, nil
 }
@@ -68,29 +108,27 @@ func (s *Service) Get(ctx context.Context, tenantID, taskID string) (*TaskOutput
 	}
 
 	resp := &TaskOutput{}
+	s.fillTaskOutput(resp, t)
+	return resp, nil
+}
+
+func (s *Service) fillTaskOutput(resp *TaskOutput, t db.Task) {
 	resp.Body.ID = t.ID.String()
-	resp.Body.ProjectID = t.ProjectID.UUID.String()
+	resp.Body.ProjectID = nullUUIDString(t.ProjectID)
+	resp.Body.AssignedTo = nullUUIDString(t.AssignedTo)
 	resp.Body.Title = t.Title
 	resp.Body.Description = t.Description.String
 	resp.Body.Status = t.Status
 	resp.Body.Priority = int(t.Priority.Int32)
-	resp.Body.DueDate = fmt.Sprintf("%v", t.DueDate.Time)
-	resp.Body.CreatedAt = t.CreatedAt.Time.Format(time.RFC3339)
-	resp.Body.UpdatedAt = t.UpdatedAt.Time.Format(time.RFC3339)
-	return resp, nil
+	resp.Body.DueDate = formatNullTime(t.DueDate)
+	resp.Body.CreatedAt = formatNullTime(t.CreatedAt)
+	resp.Body.UpdatedAt = formatNullTime(t.UpdatedAt)
 }
 
 func (s *Service) Create(ctx context.Context, tenantID, userID string, input TaskInput) (*TaskOutput, error) {
 	var t db.Task
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		dueDate := sql.NullTime{}
-		if input.Body.DueDate != "" {
-			if parsed, err := time.Parse(time.RFC3339, input.Body.DueDate); err == nil {
-				dueDate = sql.NullTime{Time: parsed, Valid: true}
-			}
-		}
-
 		t, err = q.CreateTask(ctx, db.CreateTaskParams{
 			TenantID:    db.ParseUUID(tenantID),
 			ProjectID:   db.ToNullUUID(input.Body.ProjectID),
@@ -99,18 +137,20 @@ func (s *Service) Create(ctx context.Context, tenantID, userID string, input Tas
 			Description: sql.NullString{String: input.Body.Description, Valid: input.Body.Description != ""},
 			Status:      input.Body.Status,
 			Priority:    sql.NullInt32{Int32: int32(input.Body.Priority), Valid: true},
-			DueDate:     dueDate,
+			DueDate:     parseNullTime(input.Body.DueDate),
 		})
 		if err != nil {
 			return err
 		}
 
+		uid := db.ParseUUID(userID)
 		_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
 			TenantID: db.ParseUUID(tenantID),
-			UserID:   db.ParseUUID(userID),
+			UserID:   uid,
 			TaskID:   uuid.NullUUID{UUID: t.ID, Valid: true},
 			Action:   "task_created",
 		})
+		_ = s.engine.AwardBadges(ctx, q, uid, "task_created")
 		return nil
 	})
 	if err != nil {
@@ -118,10 +158,41 @@ func (s *Service) Create(ctx context.Context, tenantID, userID string, input Tas
 	}
 
 	resp := &TaskOutput{}
-	resp.Body.ID = t.ID.String()
-	resp.Body.Title = t.Title
-	resp.Body.Status = t.Status
+	s.fillTaskOutput(resp, t)
 	return resp, nil
+}
+
+// applyCompletion records the completion and updates EXP / level / character /
+// streak / badges. The activity log is written first so count-based badge
+// conditions include the task(s) just completed; the streak is updated before
+// badge evaluation so streak badges fire on the day they are reached.
+func (s *Service) applyCompletion(ctx context.Context, q *db.Queries, tid, uid uuid.UUID, exp int32, taskIDs ...uuid.UUID) {
+	for _, id := range taskIDs {
+		_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
+			TenantID: tid, UserID: uid,
+			TaskID: uuid.NullUUID{UUID: id, Valid: true},
+			Action: "task_completed",
+		})
+	}
+	_ = q.AddExp(ctx, db.AddExpParams{UserID: uid, Exp: exp})
+	_ = q.UpdateLevel(ctx, uid)
+	_ = gamification.UpdateCharacterType(ctx, q, uid)
+	_ = s.streak.UpdateStreak(ctx, q, uid)
+	_ = s.engine.AwardBadges(ctx, q, uid, "task_completed", taskIDs...)
+}
+
+// applyUncompletion reverses EXP and re-evaluates count-based badges after a
+// done -> not-done transition.
+func (s *Service) applyUncompletion(ctx context.Context, q *db.Queries, tid, uid, taskID uuid.UUID) {
+	_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
+		TenantID: tid, UserID: uid,
+		TaskID: uuid.NullUUID{UUID: taskID, Valid: true},
+		Action: "task_uncompleted",
+	})
+	_ = q.SubtractExp(ctx, db.SubtractExpParams{UserID: uid, Exp: 10})
+	_ = q.UpdateLevel(ctx, uid)
+	_ = gamification.UpdateCharacterType(ctx, q, uid)
+	_ = s.engine.ReEvaluateBadges(ctx, q, uid)
 }
 
 func (s *Service) Update(ctx context.Context, tenantID, userID, taskID string, input TaskInput) (*TaskOutput, error) {
@@ -133,20 +204,14 @@ func (s *Service) Update(ctx context.Context, tenantID, userID, taskID string, i
 			return err
 		}
 
-		dueDate := sql.NullTime{}
-		if input.Body.DueDate != "" {
-			if parsed, err := time.Parse(time.RFC3339, input.Body.DueDate); err == nil {
-				dueDate = sql.NullTime{Time: parsed, Valid: true}
-			}
-		}
-
 		t, err = q.UpdateTask(ctx, db.UpdateTaskParams{
 			ID:          db.ParseUUID(taskID),
 			Title:       input.Body.Title,
 			Description: sql.NullString{String: input.Body.Description, Valid: input.Body.Description != ""},
 			Status:      input.Body.Status,
 			Priority:    sql.NullInt32{Int32: int32(input.Body.Priority), Valid: true},
-			DueDate:     dueDate,
+			DueDate:     parseNullTime(input.Body.DueDate),
+			AssignedTo:  db.ToNullUUID(input.Body.AssignedTo),
 		})
 		if err != nil {
 			return err
@@ -156,28 +221,9 @@ func (s *Service) Update(ctx context.Context, tenantID, userID, taskID string, i
 		tid := db.ParseUUID(tenantID)
 
 		if t.Status == "done" && oldTask.Status != "done" {
-			// Transition to done: award EXP and badges
-			_ = q.AddExp(ctx, db.AddExpParams{UserID: uid, Exp: 10})
-			_ = q.UpdateLevel(ctx, uid)
-			_ = gamification.UpdateCharacterType(ctx, q, uid)
-			_ = s.engine.AwardBadges(ctx, uid, "task_completed", t.ID)
-			_ = s.streak.UpdateStreak(ctx, uid)
-			_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
-				TenantID: tid, UserID: uid,
-				TaskID: uuid.NullUUID{UUID: t.ID, Valid: true},
-				Action: "task_completed",
-			})
+			s.applyCompletion(ctx, q, tid, uid, 10, t.ID)
 		} else if oldTask.Status == "done" && t.Status != "done" {
-			// Transition from done: reverse EXP and re-evaluate badges
-			_ = q.SubtractExp(ctx, db.SubtractExpParams{UserID: uid, Exp: 10})
-			_ = q.UpdateLevel(ctx, uid)
-			_ = gamification.UpdateCharacterType(ctx, q, uid)
-			_ = s.engine.ReEvaluateBadges(ctx, uid)
-			_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
-				TenantID: tid, UserID: uid,
-				TaskID: uuid.NullUUID{UUID: t.ID, Valid: true},
-				Action: "task_uncompleted",
-			})
+			s.applyUncompletion(ctx, q, tid, uid, t.ID)
 		}
 		return nil
 	})
@@ -186,9 +232,7 @@ func (s *Service) Update(ctx context.Context, tenantID, userID, taskID string, i
 	}
 
 	resp := &TaskOutput{}
-	resp.Body.ID = t.ID.String()
-	resp.Body.Title = t.Title
-	resp.Body.Status = t.Status
+	s.fillTaskOutput(resp, t)
 	return resp, nil
 }
 
@@ -213,26 +257,9 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID, userID, taskID, st
 		tid := db.ParseUUID(tenantID)
 
 		if status == "done" && oldTask.Status != "done" {
-			_ = q.AddExp(ctx, db.AddExpParams{UserID: uid, Exp: 10})
-			_ = q.UpdateLevel(ctx, uid)
-			_ = gamification.UpdateCharacterType(ctx, q, uid)
-			_ = s.engine.AwardBadges(ctx, uid, "task_completed", t.ID)
-			_ = s.streak.UpdateStreak(ctx, uid)
-			_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
-				TenantID: tid, UserID: uid,
-				TaskID: uuid.NullUUID{UUID: t.ID, Valid: true},
-				Action: "task_completed",
-			})
+			s.applyCompletion(ctx, q, tid, uid, 10, t.ID)
 		} else if oldTask.Status == "done" && status != "done" {
-			_ = q.SubtractExp(ctx, db.SubtractExpParams{UserID: uid, Exp: 10})
-			_ = q.UpdateLevel(ctx, uid)
-			_ = gamification.UpdateCharacterType(ctx, q, uid)
-			_ = s.engine.ReEvaluateBadges(ctx, uid)
-			_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
-				TenantID: tid, UserID: uid,
-				TaskID: uuid.NullUUID{UUID: t.ID, Valid: true},
-				Action: "task_uncompleted",
-			})
+			s.applyUncompletion(ctx, q, tid, uid, t.ID)
 		}
 		return nil
 	})
@@ -241,9 +268,7 @@ func (s *Service) UpdateStatus(ctx context.Context, tenantID, userID, taskID, st
 	}
 
 	resp := &TaskOutput{}
-	resp.Body.ID = t.ID.String()
-	resp.Body.Title = t.Title
-	resp.Body.Status = t.Status
+	s.fillTaskOutput(resp, t)
 	return resp, nil
 }
 
@@ -269,6 +294,7 @@ func (s *Service) BulkCreate(ctx context.Context, tenantID, userID string, input
 				Action:   "task_created",
 			})
 		}
+		_ = s.engine.AwardBadges(ctx, q, uid, "task_created")
 		return nil
 	})
 }
@@ -291,19 +317,7 @@ func (s *Service) BulkUpdateStatus(ctx context.Context, tenantID, userID, status
 		if status == "done" {
 			uid := db.ParseUUID(userID)
 			tid := db.ParseUUID(tenantID)
-			_ = q.AddExp(ctx, db.AddExpParams{UserID: uid, Exp: int32(10 * len(ids))})
-			_ = q.UpdateLevel(ctx, uid)
-			_ = gamification.UpdateCharacterType(ctx, q, uid)
-			_ = s.engine.AwardBadges(ctx, uid, "task_completed")
-			_ = s.streak.UpdateStreak(ctx, uid)
-			for _, id := range uuids {
-				_ = q.InsertActivityLog(ctx, db.InsertActivityLogParams{
-					TenantID: tid,
-					UserID:   uid,
-					TaskID:   uuid.NullUUID{UUID: id, Valid: true},
-					Action:   "task_completed",
-				})
-			}
+			s.applyCompletion(ctx, q, tid, uid, int32(10*len(ids)), uuids...)
 		}
 		return nil
 	})

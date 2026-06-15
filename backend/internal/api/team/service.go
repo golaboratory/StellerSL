@@ -38,7 +38,7 @@ func (s *Service) List(ctx context.Context, tenantID string, limit, offset int32
 	return resp, nil
 }
 
-func (s *Service) Create(ctx context.Context, tenantID, name string) (*TeamItem, error) {
+func (s *Service) Create(ctx context.Context, tenantID, callerID, name string) (*TeamItem, error) {
 	var t db.Team
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
@@ -46,7 +46,16 @@ func (s *Service) Create(ctx context.Context, tenantID, name string) (*TeamItem,
 			TenantID: db.ParseUUID(tenantID),
 			Name:     name,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		// The creator becomes the team owner; without this nobody could
+		// pass the role checks on team management operations.
+		return q.AddTeamMember(ctx, db.AddTeamMemberParams{
+			TeamID: t.ID,
+			UserID: db.ParseUUID(callerID),
+			Role:   "owner",
+		})
 	})
 	if err != nil {
 		return nil, err
@@ -112,10 +121,20 @@ func (s *Service) requireRole(ctx context.Context, q *db.Queries, teamID, caller
 	return fmt.Errorf("permission denied: requires role %v", allowedRoles)
 }
 
+// AddMember adds a member or, because AddTeamMember upserts, changes the role
+// of an existing member.
 func (s *Service) AddMember(ctx context.Context, tenantID, callerID, teamID, userID, role string) error {
 	return s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		if err := s.requireRole(ctx, q, teamID, callerID, "owner", "admin"); err != nil {
 			return err
+		}
+		// Prevent demoting the owner via the upsert path
+		targetRole, err := q.GetTeamMemberRole(ctx, db.GetTeamMemberRoleParams{
+			TeamID: db.ParseUUID(teamID),
+			UserID: db.ParseUUID(userID),
+		})
+		if err == nil && targetRole == "owner" && role != "owner" {
+			return fmt.Errorf("cannot change the team owner's role")
 		}
 		return q.AddTeamMember(ctx, db.AddTeamMemberParams{
 			TeamID: db.ParseUUID(teamID),
@@ -146,10 +165,10 @@ func (s *Service) RemoveMember(ctx context.Context, tenantID, callerID, teamID, 
 }
 
 func (s *Service) ListMembers(ctx context.Context, tenantID, teamID string) (*TeamMemberListOutput, error) {
-	var users []db.User
+	var members []db.ListTeamMembersRow
 	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
 		var err error
-		users, err = q.ListTeamMembers(ctx, db.ParseUUID(teamID))
+		members, err = q.ListTeamMembers(ctx, db.ParseUUID(teamID))
 		return err
 	})
 	if err != nil {
@@ -157,11 +176,12 @@ func (s *Service) ListMembers(ctx context.Context, tenantID, teamID string) (*Te
 	}
 
 	resp := &TeamMemberListOutput{}
-	for _, u := range users {
+	for _, m := range members {
 		resp.Body.Items = append(resp.Body.Items, TeamMemberUser{
-			ID:    u.ID.String(),
-			Email: u.Email,
-			Name:  u.Name,
+			ID:    m.ID.String(),
+			Email: m.Email,
+			Name:  m.Name,
+			Role:  m.Role,
 		})
 	}
 	return resp, nil

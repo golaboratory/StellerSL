@@ -35,7 +35,7 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		Summary:     "Create Team",
 	}, func(ctx context.Context, input *TeamInput) (*TeamItem, error) {
 		auth, _ := getAuth(ctx)
-		return service.Create(ctx, auth.TenantID, input.Body.Name)
+		return service.Create(ctx, auth.TenantID, auth.UserID, input.Body.Name)
 	})
 
 	huma.Register(api, huma.Operation{

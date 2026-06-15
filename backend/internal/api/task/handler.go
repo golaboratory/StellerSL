@@ -13,8 +13,14 @@ type AuthInfo struct {
 }
 
 type ListTasksInput struct {
-	Limit  int32 `query:"limit" default:"50" maximum:"200"`
-	Offset int32 `query:"offset" default:"0"`
+	Limit       int32  `query:"limit" default:"50" maximum:"200"`
+	Offset      int32  `query:"offset" default:"0"`
+	// Optional filters (5-1). Priority -1 means "no filter".
+	Status      string `query:"status" doc:"Filter by status (todo, doing, done)"`
+	Priority    int32  `query:"priority" default:"-1" doc:"Filter by priority, -1 for no filter"`
+	ProjectID   string `query:"project_id" doc:"Filter by project UUID"`
+	DueDateFrom string `query:"due_date_from" doc:"Filter due_date >= this RFC3339 timestamp"`
+	DueDateTo   string `query:"due_date_to" doc:"Filter due_date <= this RFC3339 timestamp"`
 }
 
 func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Context) (AuthInfo, error)) {
@@ -25,7 +31,7 @@ func RegisterHandlers(api huma.API, service *Service, getAuth func(context.Conte
 		Summary:     "List Tasks",
 	}, func(ctx context.Context, input *ListTasksInput) (*TaskListOutput, error) {
 		auth, _ := getAuth(ctx)
-		return service.List(ctx, auth.TenantID, input.Limit, input.Offset)
+		return service.List(ctx, auth.TenantID, *input)
 	})
 
 	huma.Register(api, huma.Operation{

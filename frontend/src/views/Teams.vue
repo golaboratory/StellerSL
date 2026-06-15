@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { DefaultApi, Configuration, TeamItem } from '../api';
+import { DefaultApi } from '../api';
+import type { TeamItem } from '../api';
 import axiosInstance from '../api/axios';
 import Card from 'primevue/card';
 import Toolbar from 'primevue/toolbar';
@@ -9,7 +9,6 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 
-const auth = useAuthStore();
 const api = new DefaultApi(undefined, '/api', axiosInstance);
 
 const teams = ref<TeamItem[]>([]);
@@ -98,7 +97,7 @@ const handleCreateTeam = async () => {
     </div>
 
     <!-- Create Team Dialog -->
-    <Dialog v-model:visible="showCreateDialog" header="Create New Team" :style="{ width: '400px' }" modal>
+    <Dialog v-model:visible="showCreateDialog" header="Create New Team" :style="{ width: '400px' }" :breakpoints="{ '640px': '92vw' }" modal>
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
                 <label for="teamName" class="font-bold">Team Name</label>

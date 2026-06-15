@@ -20,9 +20,13 @@ type Querier interface {
 	BulkUpdateTasksStatus(ctx context.Context, arg BulkUpdateTasksStatusParams) error
 	CountDistinctProjectsCompletedToday(ctx context.Context, userID uuid.UUID) (int32, error)
 	CountProjectsByUser(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountTasksCompletedLastHour(ctx context.Context, userID uuid.UUID) (int32, error)
 	CountTasksCompletedOnWeekends(ctx context.Context, userID uuid.UUID) (int32, error)
 	CountTasksCompletedToday(ctx context.Context, userID uuid.UUID) (int32, error)
+	// Completions today within the given hour (server-local), e.g. 12 = 12:00-12:59.
+	CountTasksCompletedTodayInHour(ctx context.Context, arg CountTasksCompletedTodayInHourParams) (int32, error)
 	CountTasksCreatedToday(ctx context.Context, userID uuid.UUID) (int32, error)
+	CountTeamMembershipsByUser(ctx context.Context, userID uuid.UUID) (int32, error)
 	CountUnreadNotifications(ctx context.Context, userID uuid.UUID) (int32, error)
 	// === Notification Queries ===
 	CreateNotification(ctx context.Context, arg CreateNotificationParams) error
@@ -36,8 +40,11 @@ type Querier interface {
 	DeleteTeam(ctx context.Context, id uuid.UUID) error
 	GetDailyActivity(ctx context.Context, userID uuid.UUID) ([]GetDailyActivityRow, error)
 	GetDashboardStats(ctx context.Context, assignedTo uuid.NullUUID) (GetDashboardStatsRow, error)
+	// Last completion date BEFORE today (activity logs are written before badge
+	// evaluation, so today's completion must be excluded for comeback detection).
 	GetLastActivityDate(ctx context.Context, userID uuid.UUID) (time.Time, error)
 	GetProject(ctx context.Context, id uuid.UUID) (Project, error)
+	GetProjectTaskCounts(ctx context.Context, projectID uuid.NullUUID) (GetProjectTaskCountsRow, error)
 	GetRecentActivity(ctx context.Context, userID uuid.UUID) ([]GetRecentActivityRow, error)
 	// === Streak Queries ===
 	GetStreak(ctx context.Context, arg GetStreakParams) (UserStreak, error)
@@ -56,7 +63,7 @@ type Querier interface {
 	ListProjectMembers(ctx context.Context, projectID uuid.UUID) ([]User, error)
 	ListProjects(ctx context.Context, arg ListProjectsParams) ([]Project, error)
 	ListTasks(ctx context.Context, arg ListTasksParams) ([]Task, error)
-	ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]User, error)
+	ListTeamMembers(ctx context.Context, teamID uuid.UUID) ([]ListTeamMembersRow, error)
 	ListTeams(ctx context.Context, arg ListTeamsParams) ([]Team, error)
 	ListUnreadNotifications(ctx context.Context, arg ListUnreadNotificationsParams) ([]Notification, error)
 	ListUserBadges(ctx context.Context, userID uuid.UUID) ([]Badge, error)

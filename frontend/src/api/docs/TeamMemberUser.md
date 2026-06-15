@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **email** | **string** |  | [default to undefined]
 **id** | **string** |  | [default to undefined]
 **name** | **string** |  | [default to undefined]
+**role** | **string** |  | [default to undefined]
 
 ## Example
 
@@ -18,6 +19,7 @@ const instance: TeamMemberUser = {
     email,
     id,
     name,
+    role,
 };
 ```
 

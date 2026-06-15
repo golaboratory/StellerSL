@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **avatar_url** | **string** |  | [default to undefined]
 **email** | **string** |  | [default to undefined]
 **id** | **string** |  | [default to undefined]
+**is_admin** | **boolean** |  | [default to undefined]
 **name** | **string** |  | [default to undefined]
 
 ## Example
@@ -21,6 +22,7 @@ const instance: MeOutputBody = {
     avatar_url,
     email,
     id,
+    is_admin,
     name,
 };
 ```

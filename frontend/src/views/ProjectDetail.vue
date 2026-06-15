@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
 import { useToastStore } from '../stores/toast';
-import { DefaultApi, TaskItem, AccountUser } from '../api';
+import { DefaultApi } from '../api';
+import type { TaskItem, AccountUser } from '../api';
 import axiosInstance from '../api/axios';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
@@ -18,7 +18,6 @@ import InputIcon from 'primevue/inputicon';
 
 const route = useRoute();
 const router = useRouter();
-const auth = useAuthStore();
 const toast = useToastStore();
 const confirm = useConfirm();
 const api = new DefaultApi(undefined, '/api', axiosInstance);

@@ -15,7 +15,15 @@
       "Bash(curl -s http://localhost:8888/tasks?limit=50\\\\&offset=0 -H \"Authorization: Bearer test\")",
       "Bash(PGPASSWORD=password psql:*)",
       "Bash(docker exec stellersl-db-1:*)",
-      "Bash(curl -s -X POST http://localhost:8888/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"test@example.com\",\"password\":\"password123\"}')"
+      "Bash(curl -s -X POST http://localhost:8888/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"test@example.com\",\"password\":\"password123\"}')",
+      "Bash(xargs ls -1)",
+      "Bash(grep -E \"\\\\.\\(vue|ts|json\\)$\")",
+      "Bash(go version *)",
+      "Bash(sqlc version *)",
+      "Bash(docker --version)",
+      "Bash(pnpm --version)",
+      "Read(//home/goakahane/.cache/**)",
+      "Bash(java -version)"
     ]
   }
 }

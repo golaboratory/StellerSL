@@ -123,7 +123,22 @@ func (s *Service) GetMe(ctx context.Context, tenantID, userID string) (*MeOutput
 	resp.Body.Email = user.Email
 	resp.Body.Name = user.Name
 	resp.Body.AvatarUrl = user.AvatarUrl.String
+	resp.Body.IsAdmin = user.IsAdmin
 	return resp, nil
+}
+
+// IsAdmin reports whether the user has the administrator flag.
+func (s *Service) IsAdmin(ctx context.Context, tenantID, userID string) (bool, error) {
+	var user db.User
+	err := s.queries.WithTenant(ctx, s.conn, tenantID, func(q *db.Queries) error {
+		var err error
+		user, err = q.GetUserByID(ctx, db.ParseUUID(userID))
+		return err
+	})
+	if err != nil {
+		return false, err
+	}
+	return user.IsAdmin, nil
 }
 
 func (s *Service) ChangePassword(ctx context.Context, tenantID, userID string, input ChangePasswordInput) error {
